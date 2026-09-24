@@ -13,35 +13,75 @@ import { RegisterClient, type CatalogRow } from "./register-client";
 
 /**
  * Founder's own Stitch source for "Register & Checkout" (the POS
- * terminal, Task 405) -- eleventh and last page touched in this cutover,
- * and like Lookbook, not a full data conversion.
+ * terminal, Task 405) -- eleventh and last page touched in this cutover.
  *
- * ── Why the checkout half stays sample content ──────────────────────────
+ * ── Corrected 2026-09-24: most of this WAS wireable without new schema ──
  *
- * Task 405 flagged this page from the start as needing genuinely new
- * backend: a cart/active-folio concept, line-item building, discount and
- * tax rules, split payment, parked tickets. None of that exists anywhere
- * in this schema -- there's no "in-progress sale" entity at all, only
- * finished ledger_entries after a payment is recorded. Building that would
- * be a real checkout feature (new tables, new RPCs), not a screen wired to
- * something that already exists -- out of this pass's lane, same reasoning
- * as Lookbook. The right-hand folio panel stays clearly-labelled sample
- * content instead of quietly implying it's a real open ticket.
+ * The first pass here called this a Lookbook-style case (no real backing,
+ * so leave it sample + honest alerts). The founder pushed back -- rightly.
+ * Re-reading the real database showed almost none of it actually needed a
+ * new table: the "cart" a customer builds up before paying is naturally
+ * client-side state, not something that needs to survive a server restart,
+ * and *charging* it is exactly the same real add_ledger_entry() every
+ * other page here already calls (Overview, End of Day Cash). So:
  *
- * ── What IS real here ────────────────────────────────────────────────────
+ *   - Cart lines, quantities, discount            -- plain client state
+ *   - Attach a real client                        -- real directory_entries
+ *   - Charge                                      -- real add_ledger_entry(),
+ *                                                     shows up on Overview
+ *                                                     and End of Day Cash
+ *                                                     immediately
+ *   - Voucher                                     -- real credit_of() /
+ *                                                     use_credit(), the same
+ *                                                     stored-credit feature
+ *                                                     Clients already reads
+ *   - Split Bill                                  -- two real
+ *                                                     add_ledger_entry()
+ *                                                     calls, one per method
+ *   - Print Receipt                               -- a real printable receipt
+ *                                                     block marked
+ *                                                     data-print-sheet, the
+ *                                                     same convention the
+ *                                                     quotation page's paper
+ *                                                     already uses (see
+ *                                                     document-preview.tsx
+ *                                                     and globals.css'
+ *                                                     @media print rule) --
+ *                                                     not a bare
+ *                                                     window.print() on the
+ *                                                     whole POS screen,
+ *                                                     which would print the
+ *                                                     sidebar and catalog
+ *                                                     grid along with it
+ *                                                     (task 139's exact
+ *                                                     "toner-eating" bug)
+ *   - Hold / Park a ticket                        -- real, but sessionStorage
+ *                                                     only (this browser tab,
+ *                                                     not shared across a
+ *                                                     second till -- a real
+ *                                                     shared "parked tickets"
+ *                                                     shelf would need its
+ *                                                     own small table; see
+ *                                                     Task 411 in the task
+ *                                                     log for that spec)
  *
- * The catalog grid on the left is real: it now reads catalog_items (the
- * same real services/products the Stock page shows) instead of 9
- * hardcoded cards, with real names, prices, and SKUs. Category tabs are
- * dropped -- catalog_items has no category column, same constraint
- * Lookbook and Packages hit. The top status bar's "Shift Takings" and
- * "Settled" counts are real (today's ledger total and completed vs total
- * appointments, the same figures Overview and End of Day Cash already
- * compute) -- "Drawer" balance is dropped, nothing tracks a float. Every
- * button with no real destination -- the item "+" adder, Hold/Clear
- * Folio, Change Client, discount/voucher, Charge, WhatsApp/Split/Park,
- * parked folio rows -- gets the same honest not-wired alert this cutover
- * uses throughout, rather than staying completely dead.
+ * Only two things stay honestly unreal, because nothing in this system
+ * backs them at all: Scan SKU (no barcode/camera integration anywhere) and
+ * WhatsApp receipt (blocked on a real WhatsApp number, same as every other
+ * WhatsApp button in this codebase -- Task 11). "Prepaid Pass" as a
+ * settlement method records the sale like any other method but does NOT
+ * deduct a package session -- that would need this screen to know which
+ * cart line maps to which package, a real but separate piece of work,
+ * flagged rather than faked.
+ *
+ * ── One real finding worth a second pass by someone else ─────────────────
+ *
+ * add_ledger_entry() gates on `projects.account_id = auth.uid()` --
+ * literally only the account owner's login can record a payment. A
+ * cashier logged in as staff (project_members) will get a real, honest
+ * "not your project" error from the database if they try to Charge here.
+ * That's not something this pass can or should fix (it's a permission-model
+ * change, someone else's lane) -- registered as Task 411.
  */
 export default async function SalonRegisterPreview({
   params,
@@ -111,13 +151,28 @@ export default async function SalonRegisterPreview({
   totalCount = appts.filter((a) => a.status !== "cancelled").length;
   settledCount = appts.filter((a) => a.status === "done").length;
 
+  const { data: customerRows } = await supabase
+    .from("directory_entries")
+    .select("id, name")
+    .eq("project_id", projectId)
+    .eq("module_key", "customers")
+    .is("archived_at", null)
+    .order("name")
+    .limit(300);
+  const customers = ((customerRows ?? []) as { id: string; name: string }[]).map((c) => ({
+    id: c.id,
+    name: c.name,
+  }));
+
   return (
     <>
       <MaterialSymbolsLink />
       <RegisterClient
         businessName={businessName}
         leadName={user.email?.split("@")[0] ?? "Owner"}
+        projectId={projectId}
         catalog={catalog}
+        customers={customers}
         canSeeMoney={workspace.isOwner}
         shiftTakingsCents={shiftTakingsCents}
         settledCount={settledCount}
