@@ -4509,3 +4509,43 @@ Blowout 2 位）、帐本排序（最逾期在上、取消的在下）；再用�
       对照两间并排的截图，看哪里怪（等他点头）
 - [ ] （远期，等他问）真的做成「这家店自己的作品集」要新建一张放作品（照片 · 名字 · 配方）的表，功能地基那一边；
       先问沙龙老板会不会真的一张张上传
+
+### 415. 🔴 第一版 13 页补齐：每个功能、每颗按钮都要对得上资料库的表（2026-09-24 他交办）
+> `先补齐第一版的Ui页面先 我们的页面要处理好 每一个功能 还是button都是要对应到database的表格
+> 然后才去弄一个小saloon做对比`
+
+**顺序**：先把这一件做完，**之后**才做[任务 414](#414) 那个「第二间小发廊对比」。
+
+**盘点方法**（不是凭印象）：① grep 所有「isn't wired」弹窗 ② 脚本扫**所有档案**里没有任何点击动作的按钮
+③ 找还留着他设计自带的假资料。结果：13 页里 8 页有缺口。
+
+#### A. 现有的表 / 函式就接得上 —— 不用新表，我做
+| 页 | 现在的样子 | 接到哪里 |
+|---|---|---|
+| **Schedule** | 「New Appointment」· 点一个空位 · 「自订时段」· 点一笔预约 · 换日期，六处只弹一句「还没接」 | `add_appointment` · `set_appointment_status` · 网址读日期 |
+| **Clients** | New Client Folio · Edit Profile · Book Next · Redeem Session · 去看发票 · Bill Product，六处弹窗 | `add_directory_entry` · `update_directory_entry` · `add_appointment` · `use_package_session` · 连到 Invoices · 连到 Register 并选好这位客人 |
+| **Stock** | 🔴 右边「进货单草稿」「Delivery Inbound」「Par 94.2%」**整块还是他设计自带的假资料**（`Blond Studio` · `PO #2024-108` · `L'Oréal`），两颗按钮（Send WhatsApp PO · Save PO Draft）**没有任何动作**。**这是盘点里最大的一个洞，前面那几页收尾时我都说「Stock 转成真资料了」，而这一块其实没转** | 进货单走 `purchases`（`add_pipeline_record` / `set_record_lines`）· Delivery Inbound 读还没收货的进货单 · Par 从补货线算 · Send WhatsApp PO = 供应商的 wa.me 连结 |
+| **Stylists** | Edit commission tiers 弹窗 | `set_commission_tiers` |
+| **Register** | Scan SKU · Send WhatsApp receipt · 没价钱的货，三处弹窗 | `catalog_items.sku`（扫码枪就是键盘）· 客人的 WhatsApp 号码做 wa.me · 当场补价钱 |
+| **EOD Cash** | Export Shift PDF 弹窗 | 列印 / CSV（读今天的收款） |
+
+#### B. 需要新表 —— 功能地基那一边，我不动，只登记，等他决定
+| 页 | 缺什么 | 需要 |
+|---|---|---|
+| **Lookbook** | Add Hairstyle Case · 两个筛选 · 排序 · 展示页；六张卡是设计自带示例 | 一张作品表（照片 · 名字 · 配方 · 师傅 · 标签）。他已决定留着当卖点，**要不要建这张表** |
+| **EOD Cash** | Lock Drawer · 收工清单 · 交班备注，只存在这台电脑，重新整理就没了 | 一张收工记录表（点了多少钞票 · 备用金 · 差额 · 谁锁的） |
+| **Tenant Settings** | 还没收到设计 | 等他贴；预计读写 `projects` / 业务资料 |
+
+#### C. 跟着[任务 414](#414) 的壳的事
+侧栏读客户自己的页面组 · 左下角写死的 `Wei Lin` · Audit Log 进设置 · Lookbook 加「示例」标签。
+
+**做法**：一页一页做（[重点 5c](./founder-points.md)），每一页：接完 → 真登入脚本 → 用眼睛看图 → 逐档提交 → 才下一页。
+顺序（他每天按最多次的在前）：Schedule → Clients → Stock → Register → Stylists → EOD。
+
+- [ ] Schedule
+- [ ] Clients
+- [ ] Stock（进货单那一整块）
+- [ ] Register 三处
+- [ ] Stylists 抽成阶梯
+- [ ] EOD 导出
+- [ ] B 那三件：等他决定要不要建表 / 贴设计
