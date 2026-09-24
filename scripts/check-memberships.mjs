@@ -4,8 +4,10 @@
  * 还没有）；「谁是会员、月费多少、下次该缴哪天」这个格子今天就能建，
  * 柜台每个月手动收一次，日期自己往后推一个月——跟储值卡同一条做法。
  *
- * 🔴 钱只有老板一个人碰——`add_ledger_entry` 本身只认
- * `account_id = auth.uid()`，这两支写钱的都是 `sees_money`。
+ * 🔴 会员月费的钱只有老板碰(2026-09-24 补:任务 411 之后 `add_ledger_entry`
+ * 员工也记得了「客人付的钱」,所以挡员工的是这两支自己的 `sees_money`,
+ * 不再是 `add_ledger_entry` 更严的旧闸门):
+ * 收月费、开会员这两支写钱的都是 `sees_money`。
  */
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";

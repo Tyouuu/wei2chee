@@ -72,6 +72,7 @@
     "check:till": "node scripts/check-till.mjs",
     "check:recurring": "node scripts/check-recurring.mjs",
     "check:memberships": "node scripts/check-memberships.mjs",
+    "check:ledger-staff": "node scripts/check-ledger-staff.mjs",
     "check:follow-ups": "node scripts/check-follow-ups.mjs",
     "shoot:payment": "node scripts/shoot-payment.mjs",
     "audit:demo": "node scripts/audit-demo.mjs",
