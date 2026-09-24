@@ -87,7 +87,7 @@ export function ClientsClient({
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("recent");
   const [page, setPage] = useState(1);
-  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? clients[0]?.id ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null);
 
   const segments = useMemo(() => {
     const counts = new Map<string, number>();

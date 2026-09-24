@@ -57,8 +57,13 @@ export function Sheet({
         role="dialog"
         aria-label={label}
         onClick={(e) => e.stopPropagation()}
-        className="absolute right-0 top-0 bottom-0 w-full max-w-[420px] bg-[#ffffff] border-l border-[#c8c5cb]/40 shadow-2xl flex flex-col"
+        // Wide screens: a full-height drawer on the right. Phones: a sheet that
+        // rises from the bottom and is only as tall as its form (with a scroll
+        // when the form is long) -- a full-height drawer for a three-field
+        // form is a screen of empty white.
+        className="absolute inset-x-0 bottom-0 max-h-[88vh] rounded-t-2xl border-t border-[#c8c5cb]/40 bg-[#ffffff] shadow-2xl flex flex-col md:inset-x-auto md:right-0 md:top-0 md:h-full md:max-h-none md:w-full md:max-w-[420px] md:rounded-none md:border-t-0 md:border-l"
       >
+        <div aria-hidden className="md:hidden mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[#c8c5cb]" />
         <div className="px-5 py-4 border-b border-[#c8c5cb]/30 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-[16px] leading-6 font-semibold tracking-[-0.01em] text-[#1a1c1f] truncate">{title}</h2>

@@ -380,7 +380,10 @@ try {
   await ownerPage.getByRole("button", { name: /Redeem Session/ }).click();
   dlg = dlgOf("Use a package session");
   await dlg.waitFor();
-  check("🔴 面板列出她的套票跟真的剩余（6 of 10 left）", (await dlg.getByRole("radio").count()) === 1 && /6 of 10 left/.test(await dlg.getByRole("radio").innerText()), await dlg.innerText());
+  check("🔴 只有一张套票：不再多问「哪一张」，直接摆出「6 → 5 left」跟已经用掉几次（4 of 10 used so far）",
+    (await dlg.getByRole("radio").count()) === 0 && /6[\s\S]*5[\s\S]*left/.test(await dlg.getByTestId("pass-summary").innerText()) && /4 of 10 used so far/.test(await dlg.getByTestId("pass-summary").innerText()), await dlg.innerText());
+  check("🔴 面板开头用一句话讲这是干嘛的（没有预约的来访才需要手动扣；预约标做完会自己扣）", /already does this by itself/.test(await dlg.innerText()));
+  check("备注默认收着，点「+ Add a note」才出现", (await dlg.getByLabel("Note").count()) === 0 && (await dlg.getByRole("button", { name: /Add a note/ }).count()) === 1);
   await dlg.getByLabel("Done by").selectOption({ label: "Clients-Test Jasmine" });
   await ownerPage.screenshot({ path: `${OUT}/7-redeem-panel.png`, fullPage: true });
   await dlg.getByRole("button", { name: "Use 1 Session" }).click();
@@ -421,6 +424,28 @@ try {
   check("🔴 收银台打开时她已经挂在这一单上（不用再挑一次客人）", /Clients-Test Nora/.test(body) && !/Select a client/.test(body));
   await ownerPage.screenshot({ path: `${OUT}/10-register-with-client.png`, fullPage: true });
   check("🔴 整个过程一个「还没接」的 alert() 都没弹", alerts.length === 0, alerts.join(" | "));
+
+  // ⑥ 手机宽度（390）：面板从底下升起，只有表单那么高，不是一整条空白的侧栏
+  //    （他 2026-09-24 用手机打开 Redeem Session 说「这块看起来不是很好看」）。
+  console.log("\n⑥ 手机宽度：底部升起的面板");
+  await ownerPage.setViewportSize({ width: 390, height: 844 });
+  await ownerPage.goto(`${BASE}/en/salon-preview/clients`, { waitUntil: "networkidle", timeout: 180000 });
+  await ownerPage.getByRole("button", { name: /Redeem Session/ }).click();
+  const sheet = ownerPage.getByRole("dialog", { name: "Use a package session" });
+  await sheet.waitFor();
+  const box = await sheet.boundingBox();
+  check("🔴 手机上面板贴着屏幕底下、整个宽度，而且不是整屏高（表单多高它多高）", !!box && box.width >= 388 && Math.abs(box.y + box.height - 844) <= 2 && box.height < 700, JSON.stringify(box));
+  check("面板里的东西没有横向溢出", await sheet.evaluate((el) => el.scrollWidth <= el.clientWidth + 1));
+  check("🔴 「Use 1 Session」在手机上按得到（≥ 40px 高、整个在屏幕里）", await (async () => { const b = await sheet.getByRole("button", { name: "Use 1 Session" }).boundingBox(); return !!b && b.height >= 40 && b.y + b.height <= 844; })());
+  await ownerPage.screenshot({ path: `${OUT}/11-mobile-redeem.png` });
+  await ownerPage.getByRole("button", { name: "Close panel" }).click();
+  await ownerPage.getByRole("button", { name: /Book Next/ }).click();
+  await ownerPage.getByRole("dialog", { name: "Book next appointment" }).waitFor();
+  const bbox = await ownerPage.getByRole("dialog", { name: "Book next appointment" }).boundingBox();
+  check("🔴 手机上订位面板也是底部升起，最高只到屏幕的 88%（长表单在里面滚）", !!bbox && bbox.width >= 388 && bbox.height <= 844 * 0.88 + 2 && Math.abs(bbox.y + bbox.height - 844) <= 2, JSON.stringify(bbox));
+  await ownerPage.screenshot({ path: `${OUT}/12-mobile-book-next.png` });
+  await ownerPage.getByRole("button", { name: "Close panel" }).click();
+  await ownerPage.setViewportSize({ width: 1700, height: 1300 });
 
   // 员工身分——看得到清单跟档案,看不到钱(sees_money)。
   const staffEmail = `cli-staff-${stamp}@formae.test`;

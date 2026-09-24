@@ -497,6 +497,7 @@ export function RedeemSheet({ client, staff, onClose }: { client: ClientRow; sta
   const [packageId, setPackageId] = useState(usable[0]?.id ?? "");
   const [staffId, setStaffId] = useState(client.primaryStylistId ?? "");
   const [note, setNote] = useState("");
+  const [noteOpen, setNoteOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState<string | null>(null);
@@ -541,29 +542,70 @@ export function RedeemSheet({ client, staff, onClose }: { client: ClientRow; sta
         </p>
       ) : (
         <>
-          <div className="flex flex-col gap-1.5">
-            <span className={LABEL}>Which pass</span>
-            <div className="flex flex-col gap-2" role="radiogroup" aria-label="Which pass">
-              {usable.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={p.id === packageId}
-                  onClick={() => setPackageId(p.id)}
-                  className={
-                    "text-left rounded-lg px-3 py-2.5 transition-colors " +
-                    (p.id === packageId ? "border-2 border-[#000000] bg-[#f3f3f7]" : "border border-[#c8c5cb]/60 bg-[#ffffff] hover:bg-[#f3f3f7]")
-                  }
-                >
-                  <span className="block text-[13.5px] font-semibold text-[#1a1c1f]">{p.name}</span>
-                  <span className="block text-[11.5px] font-mono text-[#5e5e67] mt-0.5">
-                    {p.sessionsLeft} of {p.sessionsTotal} left{p.expiresOn ? ` · valid to ${p.expiresOn}` : ""}
-                  </span>
-                </button>
-              ))}
+          <p className="text-[13px] leading-5 text-[#47464b]">
+            Takes one visit off her prepaid pass. Marking a booking as done already does this by itself, so use this for a visit that was not booked.
+          </p>
+
+          {usable.length > 1 && (
+            <div className="flex flex-col gap-1.5">
+              <span className={LABEL}>Which pass</span>
+              <div className="flex flex-col gap-2" role="radiogroup" aria-label="Which pass">
+                {usable.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={p.id === packageId}
+                    onClick={() => setPackageId(p.id)}
+                    className={
+                      "text-left rounded-lg px-3 py-2.5 transition-colors " +
+                      (p.id === packageId ? "border-2 border-[#000000] bg-[#f3f3f7]" : "border border-[#c8c5cb]/60 bg-[#ffffff] hover:bg-[#f3f3f7]")
+                    }
+                  >
+                    <span className="block text-[13.5px] font-semibold text-[#1a1c1f]">{p.name}</span>
+                    <span className="block text-[11.5px] font-mono text-[#5e5e67] mt-0.5">{p.sessionsLeft} of {p.sessionsTotal} left</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {chosen && (
+            <div data-testid="pass-summary" className="rounded-xl bg-[#f3f3f7] border border-[#e8e8ec] p-4 flex flex-col gap-3">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-[14px] font-semibold text-[#1a1c1f]">{chosen.name}</span>
+                {chosen.expiresOn && <span className="text-[11px] font-mono text-[#5e5e67] shrink-0">valid to {chosen.expiresOn}</span>}
+              </div>
+              <div className="flex items-baseline gap-2.5">
+                <span className="font-mono text-[28px] leading-none font-semibold text-[#77767b]">{chosen.sessionsLeft}</span>
+                <span className="material-symbols-outlined text-[20px] text-[#77767b] self-center">arrow_forward</span>
+                <span className="font-mono text-[28px] leading-none font-semibold text-[#000000]">{chosen.sessionsLeft - 1}</span>
+                <span className="text-[12px] text-[#5e5e67] font-mono">left</span>
+              </div>
+              {chosen.sessionsTotal <= 30 ? (
+                <div className="flex gap-1" aria-hidden>
+                  {Array.from({ length: chosen.sessionsTotal }, (_, i) => {
+                    const used = i < chosen.sessionsUsed;
+                    const now = i === chosen.sessionsUsed;
+                    return (
+                      <span
+                        key={i}
+                        className={
+                          "h-2 flex-1 rounded-sm " +
+                          (used ? "bg-[#000000]" : now ? "bg-[#ffffff] border-2 border-[#000000]" : "bg-[#dcdce0]")
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="h-2 rounded-full bg-[#dcdce0] overflow-hidden" aria-hidden>
+                  <div className="h-full bg-[#000000]" style={{ width: `${Math.round((chosen.sessionsUsed / chosen.sessionsTotal) * 100)}%` }} />
+                </div>
+              )}
+              <span className="text-[11.5px] font-mono text-[#5e5e67]">{chosen.sessionsUsed} of {chosen.sessionsTotal} used so far</span>
+            </div>
+          )}
 
           <label className="flex flex-col gap-1.5">
             <span className={LABEL}>Done by</span>
@@ -577,10 +619,16 @@ export function RedeemSheet({ client, staff, onClose }: { client: ClientRow; sta
             </select>
           </label>
 
-          <label className="flex flex-col gap-1.5">
-            <span className={LABEL}>Note</span>
-            <input type="text" aria-label="Note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" className={FIELD} />
-          </label>
+          {noteOpen ? (
+            <label className="flex flex-col gap-1.5">
+              <span className={LABEL}>Note</span>
+              <input type="text" aria-label="Note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything to remember about this visit" className={FIELD} autoFocus />
+            </label>
+          ) : (
+            <button type="button" onClick={() => setNoteOpen(true)} className="self-start text-[12.5px] font-medium text-[#000000] underline underline-offset-2">
+              + Add a note
+            </button>
+          )}
 
           {error && (
             <p role="alert" data-testid="panel-error" className="text-[12.5px] text-[#ba1a1a]">
