@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useContext } from "react";
 import Link from "next/link";
-import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { salonRowVisible, type SalonNavContext } from "@/lib/portal/salon-nav";
 
 /**
  * The founder's own Stitch-generated shell for the salon redesign (Task 405),
@@ -141,6 +141,18 @@ const MANAGEMENT: { key: SalonNavKey | null; href: string; icon: string; label: 
   { key: null, href: "", icon: "tune", label: "Tenant Settings" },
 ];
 
+/**
+ * Who is looking, and which pages their business keeps. Filled in once by
+ * salon-preview/layout.tsx (a server component that can ask the database), so
+ * the sidebar draws the right rows on the first paint instead of drawing all of
+ * them and then taking some away. Null = nobody known: draw everything.
+ */
+export type SalonViewer = SalonNavContext & { viewerName: string };
+const SalonViewerContext = createContext<SalonViewer | null>(null);
+export function SalonViewerProvider({ value, children }: { value: SalonViewer | null; children: React.ReactNode }) {
+  return <SalonViewerContext.Provider value={value}>{children}</SalonViewerContext.Provider>;
+}
+
 export function MaterialSymbolsLink() {
   // Material Symbols has no next/font/google entry; App Router hoists and
   // dedupes a <link> rendered from a component across both preview pages on
@@ -160,24 +172,12 @@ export function MaterialSymbolsLink() {
  * cashier saw a director's name. Now it is the real account: the name before
  * the @ of the email (there is no display-name field anywhere in the product to
  * read instead), and Owner or Staff from the same my_workspace() the server
- * pages use. Until it has answered, the avatar shows a dot and the name is
- * blank rather than briefly the wrong person.
+ * pages use, handed down by salon-preview/layout.tsx. With nobody known the
+ * avatar is a dot and the name is blank rather than the wrong person.
  */
 function SidebarWho() {
-  const [who, setWho] = useState<{ name: string; role: string } | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const supabase = createBrowserSupabaseClient();
-      const { data: auth } = await supabase.auth.getUser();
-      const { data: ws } = await supabase.rpc("my_workspace");
-      const role = (ws as { role: string }[] | null)?.[0]?.role === "staff" ? "Staff" : "Owner";
-      if (!cancelled) setWho({ name: (auth.user?.email ?? "").split("@")[0], role });
-    })().catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const viewer = useContext(SalonViewerContext);
+  const who = viewer ? { name: viewer.viewerName, role: viewer.isOwner ? "Owner" : "Staff" } : null;
   const initials = who?.name ? who.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase() : "·";
   return (
     <div data-testid="sidebar-who" className="flex items-center gap-3 p-2 rounded-lg bg-[#f3f3f7]">
@@ -204,6 +204,10 @@ export function SalonSidebar({
   businessName?: string;
   subtitle?: string;
 }) {
+  const viewer = useContext(SalonViewerContext);
+  const dailyRows = DAILY_OPS.filter((r) => salonRowVisible(r.key, viewer, active));
+  // "Tenant Settings" has no key and no page yet; it stays, greyed.
+  const managementRows = MANAGEMENT.filter((r) => r.key === null || salonRowVisible(r.key, viewer, active));
   return (
     <aside className="fixed left-0 top-0 h-full w-64 bg-[#ffffff] z-40 flex flex-col justify-between border-r border-[#c8c5cb]/30">
       <div className="flex flex-col">
@@ -221,7 +225,7 @@ export function SalonSidebar({
               Daily Operations
             </div>
             <nav className="space-y-0.5">
-              {DAILY_OPS.map((item) =>
+              {dailyRows.map((item) =>
                 item.href ? (
                   <Link
                     key={item.key}
@@ -257,7 +261,7 @@ export function SalonSidebar({
               Management
             </div>
             <nav className="space-y-0.5">
-              {MANAGEMENT.map((item) =>
+              {managementRows.map((item) =>
                 item.href ? (
                   <Link
                     key={item.label}

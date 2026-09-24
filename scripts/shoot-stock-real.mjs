@@ -266,6 +266,10 @@ try {
   const moves = await must("moves", Promise.resolve(admin.from("stock_moves").select("qty, direction, cost_cents, against_id").eq("against_id", po1.id)));
   check("🔴 库存流水记的成本是订单上的单价（RM 142.00），不是别的", moves.length === 1 && moves[0].direction === "in" && Number(moves[0].cost_cents) === 14200, JSON.stringify(moves));
   await until(async () => (await page.getByTestId("po-open").filter({ hasText: "Stock-Test Supplier" }).filter({ hasNotText: "WA" }).count()) === 1);
+  // 那一条只数卡片有几张，而卡片本来就还在——它一开始就成立。要等的是服务器把新数字送回来
+  // （router.refresh() 落地：架上那一行变成 3 tub），不然点到的是还写着「ordered 3」的旧卡，
+  // 再点确认就照旧卡的默认 3 个收了。人不会在 100 毫秒内点第二下，这一条只是让尺子别抢跑。
+  await until(async () => /3 tub/.test(await page.locator("tr", { hasText: "Stock-Test Bleach Tub" }).innerText().catch(() => "")));
   const card1b = page.getByTestId("po-open").filter({ hasText: "Stock-Test Supplier" }).filter({ hasNotText: "WA" });
   await card1b.getByRole("button", { name: "Receive" }).click();
   check("🔴 再点 Receive：默认只剩没到的那 1 个，并写着「2 in already」", (await card1b.getByLabel("Arrived Stock-Test Bleach Tub").inputValue()) === "1" && /2 in already/.test(await card1b.innerText()));
