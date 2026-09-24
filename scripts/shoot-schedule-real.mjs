@@ -281,22 +281,46 @@ try {
   await page.goto(`${BASE}/en/salon-preview/schedule?date=${otherDay}`, { waitUntil: "networkidle", timeout: 180000 });
   check("🔴 直接打开同一周的另一天，看得到那天的预约", /Other-Day Guest/.test(await page.locator("body").innerText()));
 
-  // ── ② 周视图 ────────────────────────────────────────────────────────────
-  console.log("\n② 周视图");
+  // ── ② 周视图：一位师傅、七天、每天一行（跟日视图同一条时间轴）─────────────
+  console.log("\n② 周视图（一次一位师傅）");
+  const otherIdx = (new Date(`${otherDay}T00:00:00Z`).getUTCDay() + 6) % 7; // 另一天是这一周的第几行（周一 = 0）
   await page.goto(`${BASE}/en/salon-preview/schedule`, { waitUntil: "networkidle", timeout: 180000 });
   await page.getByRole("button", { name: /^Week/ }).click();
-  const totals = await page.getByTestId("week-total").allInnerTexts();
-  const todayIdx = dowToday;
-  const otherIdx = (new Date(`${otherDay}T00:00:00Z`).getUTCDay() + 6) % 7;
-  check("🔴 周视图七天都有总数", totals.length === 7, JSON.stringify(totals));
-  check("🔴 今天的总数是 5（Amy 3 笔含要取消那笔 + Jasmine 2 笔）", totals[todayIdx] === "5", `今天=${totals[todayIdx]}`);
-  check("🔴 同一周另一天的总数是 1（Other-Day Guest）", totals[otherIdx] === "1", `另一天=${totals[otherIdx]}`);
+  check("🔴 周视图七行，一天一行", (await page.getByTestId("lane-label").count()) === 7, String(await page.getByTestId("lane-label").count()));
+  check("🔴 一次只看一位：默认第一位（Amy），下拉里有两位师傅", (await page.getByLabel("Week stylist").inputValue()) === amy.data.id && (await page.getByLabel("Week stylist").locator("option").count()) === 2);
+  check("🔴 Amy 这一周 4 笔（今天 3 笔含要取消那笔 + 另一天 1 笔）", /4 bookings this week/.test(await page.getByTestId("week-count").innerText()), await page.getByTestId("week-count").innerText());
+  check("🔴 今天那一行标着 Today", (await page.getByTestId("lane-label").filter({ hasText: "Today" }).count()) === 1);
+  check("Amy 这一周的预约卡都画在行里（4 张）", (await page.getByTestId("appt-card").count()) === 4, String(await page.getByTestId("appt-card").count()));
+  await page.getByLabel("Week stylist").selectOption(jasmine.data.id);
+  check("🔴 换成 Jasmine：这一周 2 笔，而且换了一批卡", /2 bookings this week/.test(await page.getByTestId("week-count").innerText()) && (await page.getByTestId("appt-card").count()) === 2, `${await page.getByTestId("week-count").innerText()} / ${await page.getByTestId("appt-card").count()}`);
   check("没有假的写死师傅名", !/Chloe Tan|Amy Chen|Kelvin Ng/.test(await page.locator("body").innerText()));
+  await page.getByLabel("Week stylist").selectOption(amy.data.id);
   await page.screenshot({ path: `${OUT}/3-week.png`, fullPage: true });
-  await page.getByTestId("week-day").nth(otherIdx).click();
+  // 点周视图里「另一天」那一行的空档 → 订位面板带着那一天，订下去就订在那一天
+  const otherRow = page.getByTestId("lane-label").nth(otherIdx);
+  const otherRowTop = await otherRow.boundingBox();
+  check("另一天那一行找得到", !!otherRowTop);
+  const rowGaps = page.locator("button", { hasText: "min Open" });
+  // 每一行的空档按钮按 y 位置归到行；取另一天那一行里第一段（09:00 起）
+  const gapButtons = await rowGaps.all();
+  let picked = null;
+  for (const g of gapButtons) {
+    const box = await g.boundingBox();
+    if (box && otherRowTop && box.y >= otherRowTop.y - 2 && box.y < otherRowTop.y + otherRowTop.height && /09:00/.test(await g.innerText())) { picked = g; break; }
+  }
+  check("🔴 另一天那一行有 09:00 起的空档", !!picked);
+  await picked.click();
+  let wdlg = page.getByRole("dialog", { name: "New appointment" });
+  check("🔴 点周视图的空档：订位面板写着那一天（不是今天）", (await wdlg.innerText()).includes(dayLabelOf(otherDay).split(",")[0]) && !(await wdlg.innerText()).includes(dayLabelOf(todayStr)), (await wdlg.innerText()).slice(0, 120));
+  await wdlg.getByLabel("Client").fill("Week-Booked Guest");
+  await wdlg.getByRole("button", { name: "Book Appointment" }).click();
+  await wdlg.waitFor({ state: "detached", timeout: 30000 });
+  const weekBooked = await must("week booked", Promise.resolve(admin.from("appointments").select("starts_at, staff_id").eq("project_id", pid).eq("party", "Week-Booked Guest")));
+  check("🔴 订在那一天的 09:00，不是今天", weekBooked.length === 1 && new Date(weekBooked[0].starts_at).getTime() === new Date(atOn(otherDay, 9, 0)).getTime() && weekBooked[0].staff_id === amy.data.id, JSON.stringify(weekBooked));
+  await page.getByTestId("lane-label").nth(otherIdx).getByRole("link").click();
   await showing(otherDay);
   await until(async () => /Other-Day Guest/.test(await page.locator("body").innerText()));
-  check("🔴 点周视图里的一天，真的打开那一天", /Other-Day Guest/.test(await page.locator("body").innerText()));
+  check("🔴 点周视图里一天的名字，真的打开那一天", /Other-Day Guest/.test(await page.locator("body").innerText()) && /Week-Booked Guest/.test(await page.locator("body").innerText()));
 
   // ── ③ 空档列表 + 订一个空档 ──────────────────────────────────────────────
   console.log("\n③ 空档");
@@ -347,6 +371,7 @@ try {
   await dlg.getByLabel("Start time").fill("12:30");
   await dlg.getByLabel("End time").fill("13:30");
   await dlg.getByLabel("Service").fill("Cut");
+  check("🔴 起止时间填好，面板自己算出时长「1 h」", (await dlg.getByTestId("booking-length").innerText()) === "1 h", await dlg.getByTestId("booking-length").innerText());
   await dlg.getByRole("button", { name: "Book Appointment" }).click();
   await dlg.waitFor({ state: "detached", timeout: 30000 });
   const linaRows = await must("lina", Promise.resolve(admin.from("appointments").select("party, party_id, staff_id, starts_at").eq("project_id", pid).eq("party_id", lina.data.id)));
@@ -354,11 +379,49 @@ try {
   await until(async () => /Schedule-Test Lina/.test(await page.locator("body").innerText()));
   check("画面上那一格出现了", /Schedule-Test Lina/.test(await page.locator("body").innerText()));
 
+  // 存成新客人：打一个没存过的名字 → 勾「Save her as a new client」→ 才问电话 → 订完名册里真的多一位
+  await page.getByRole("button", { name: /New\s*Appointment/ }).first().click();
+  dlg = page.getByRole("dialog", { name: "New appointment" });
+  await dlg.getByLabel("Client").fill("Newly-Saved Guest");
+  check("🔴 打一个没存过的名字：出现「存成新客人」的勾选", (await dlg.getByLabel(/Save her as a new client/).count()) === 1);
+  check("没勾之前不问电话", (await dlg.getByLabel("Phone or WhatsApp").count()) === 0);
+  await dlg.getByLabel(/Save her as a new client/).check();
+  await dlg.getByLabel("Phone or WhatsApp").fill("012-345 6789");
+  await dlg.getByLabel("Stylist").selectOption(jasmine.data.id);
+  await dlg.getByLabel("Start time").fill("16:00");
+  await dlg.getByLabel("End time").fill("16:30");
+  await dlg.getByRole("button", { name: "Book Appointment" }).click();
+  await dlg.waitFor({ state: "detached", timeout: 30000 });
+  const saved = await must("saved client", Promise.resolve(admin.from("directory_entries").select("id, name, phone, whatsapp").eq("project_id", pid).eq("module_key", "customers").eq("name", "Newly-Saved Guest")));
+  check("🔴 名册里真的多了一位 Newly-Saved Guest，电话跟 WhatsApp 都带上了", saved.length === 1 && /345/.test(saved[0].phone) && saved[0].whatsapp.replace(/\D/g, "") === "0123456789", JSON.stringify(saved));
+  const savedAppt = await must("saved appt", Promise.resolve(admin.from("appointments").select("party_id").eq("project_id", pid).eq("party", "Newly-Saved Guest")));
+  check("🔴 那一笔预约连到了她新开的档案", !!saved[0] && savedAppt[0]?.party_id === saved[0].id, JSON.stringify(savedAppt));
+
+  // 不指师傅：以前这一笔会算进总数却没有地方画，现在有自己的「Anyone」一行
+  await page.getByRole("button", { name: /New\s*Appointment/ }).first().click();
+  dlg = page.getByRole("dialog", { name: "New appointment" });
+  await dlg.getByLabel("Client").fill("Anyone-Booked Guest");
+  await dlg.getByLabel("Start time").fill("13:45");
+  await dlg.getByLabel("End time").fill("14:15");
+  await dlg.getByRole("button", { name: "Book Appointment" }).click();
+  await dlg.waitFor({ state: "detached", timeout: 30000 });
+  await until(async () => (await page.getByTestId("lane-label").filter({ hasText: "Anyone" }).count()) === 1);
+  check("🔴 不指师傅订的那一笔，有自己的「Anyone」一行，画得出来", (await page.getByTestId("lane-label").filter({ hasText: "Anyone" }).count()) === 1 && /Anyone-Booked Guest/.test(await page.locator("body").innerText()));
+  // 30 分钟的卡片只有 ~64px 宽：以前状态标签把整行吃掉，客人名字被挤成 0
+  const narrowCard = page.getByTestId("appt-card").filter({ hasText: "Anyone-Booked Guest" });
+  const nameBox = await narrowCard.locator("span").first().boundingBox();
+  check("🔴 30 分钟的窄卡片，客人名字还读得到（宽度 > 30px，不是被标签挤没）", !!nameBox && nameBox.width > 30, JSON.stringify(nameBox));
+
   // ── ⑤ 点开一笔预约 ──────────────────────────────────────────────────────
   console.log("\n⑤ 点开一笔预约");
   const cardOf = (name) => page.getByTestId("appt-card").filter({ hasText: name });
-  await cardOf("Schedule-Test Guest Marcus").click();
+  await cardOf("Schedule-Test Guest Rachel").click();
   let ad = page.getByRole("dialog", { name: "Appointment" });
+  check("🔴 没来的那一笔：写着 NO SHOW，不画三步流程，也没有动作按钮", /NO SHOW/.test(await ad.innerText()) && (await ad.getByTestId("appt-steps").count()) === 0 && /already settled/.test(await ad.innerText()) && (await ad.getByRole("button", { name: "Mark done" }).count()) === 0);
+  await ad.getByRole("button", { name: "Close", exact: true }).click();
+  await cardOf("Schedule-Test Guest Marcus").click();
+  ad = page.getByRole("dialog", { name: "Appointment" });
+  check("流程三步（Booked · Arrived · Done）画出来了", (await ad.getByTestId("appt-steps").count()) === 1 && /Booked[\s\S]*Arrived[\s\S]*Done/.test(await ad.getByTestId("appt-steps").innerText()));
   check("🔴 点开 Marcus（还没到）：四个动作都有", (await ad.getByRole("button", { name: "She's here" }).count()) === 1 && (await ad.getByRole("button", { name: "Mark done" }).count()) === 1 && (await ad.getByRole("button", { name: "No show" }).count()) === 1 && (await ad.getByRole("button", { name: "Cancel booking" }).count()) === 1);
   check("弹窗里写着他的名字 / 服务 / 时间 / 师傅", /Fade Cut & Beard/.test(await ad.innerText()) && /15:00/.test(await ad.innerText()) && /Schedule-Test Amy/.test(await ad.innerText()));
   await ad.getByRole("button", { name: "She's here" }).click();
@@ -379,7 +442,7 @@ try {
   check("做完的那一笔：只说「已经处理过了」，没有动作按钮，但有「Open full record」连结", /already settled/.test(await ad.innerText()) && (await ad.getByRole("button", { name: "Mark done" }).count()) === 0 && (await ad.getByRole("link", { name: "Open full record" }).count()) === 1);
   const href = await ad.getByRole("link", { name: "Open full record" }).getAttribute("href");
   check("「Open full record」指向这一笔自己的页", new RegExp(`/portal/bookings/[0-9a-f-]{36}$`).test(href ?? ""), href ?? "");
-  await ad.getByRole("button", { name: "Close" }).click();
+  await ad.getByRole("button", { name: "Close", exact: true }).click();
   await cardOf("Cancel-Me Guest").click();
   ad = page.getByRole("dialog", { name: "Appointment" });
   await ad.getByRole("button", { name: "Cancel booking" }).click();
@@ -396,10 +459,11 @@ try {
   await ad.getByTestId("appt-note").waitFor({ timeout: 30000 }).catch(() => {});
   const note = (await ad.getByTestId("appt-note").innerText().catch(() => "")) || "";
   check("🔴 做完一位有套票的客人：弹窗讲「用掉一次 Facial x10，还剩 9 次」", /One session of Facial x10 was used — 9 left/.test(note), note);
+  check("🔴 做完之后面板跟着变：不再提供「She's here」「Mark done」，改写「已经处理过了」", (await ad.getByRole("button", { name: "She's here" }).count()) === 0 && (await ad.getByRole("button", { name: "Mark done" }).count()) === 0 && /already settled/.test(await ad.innerText()));
   const uses = await must("uses", Promise.resolve(admin.from("package_uses").select("id").eq("package_id", pkgId)));
   check("🔴 资料库里那张套票真的记了一次用掉", uses.length === 1, String(uses.length));
   await page.screenshot({ path: `${OUT}/7-package-note.png` });
-  await ad.getByRole("button", { name: "Close" }).click();
+  await ad.getByRole("button", { name: "Close", exact: true }).click();
   await page.screenshot({ path: `${OUT}/6-after-actions.png`, fullPage: true });
 
   // ── ⑥ 员工登入也订得了 ───────────────────────────────────────────────────

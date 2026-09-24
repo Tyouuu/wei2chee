@@ -3,70 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { SalonSidebar } from "../salon-shell";
-import { AppointmentDialog, BookingDialog, type BookingPrefill, type OpenAppointment } from "./schedule-dialogs";
+import { AppointmentSheet, BookingSheet, type BookingPrefill, type OpenAppointment } from "./schedule-dialogs";
+import { Timeline, type LaneItem, type StaffLane } from "./schedule-timeline";
 
-export type LaneItem =
-  | {
-      type: "appointment";
-      id: string;
-      left: number;
-      width: number;
-      guestName: string;
-      service: string;
-      timeLabel: string;
-      statusLabel: string;
-      statusStyle: "solid" | "outline" | "muted";
-      status: "booked" | "done" | "no_show" | "cancelled";
-      arrived: boolean;
-      href: string;
-      staffName: string;
-    }
-  | { type: "block"; left: number; width: number; label: string; timeLabel: string }
-  | {
-      type: "gap";
-      left: number;
-      width: number;
-      startMinutesOfDay: number;
-      timeLabel: string;
-      minutes: number;
-      staffName: string;
-      staffId: string;
-    };
-
-export type StaffLane = {
-  id: string;
-  name: string;
-  role: string;
-  bookingsCount: number;
-  loadPct: number;
-  loadTone: "primary" | "secondary";
-  statuses: ("inService" | "upcoming" | "completed")[];
-  searchText: string;
-  items: LaneItem[];
-};
-
-export type WeekData = {
-  label: string;
-  days: { date: string; weekday: string; dayNum: number; isSelected: boolean; isToday: boolean; total: number }[];
-  rows: { id: string; name: string; counts: number[] }[];
-};
+export type { LaneItem, StaffLane } from "./schedule-timeline";
 
 type Status = "inService" | "upcoming" | "completed";
-type StatusStyle = "solid" | "outline" | "muted";
+type Gap = Extract<LaneItem, { type: "gap" }>;
+type Appointment = Extract<LaneItem, { type: "appointment" }>;
 
 const hhmm = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 const SCHEDULE = "/en/salon-preview/schedule";
-
-const STATUS_STYLE: Record<StatusStyle, string> = {
-  solid: "border-2 border-[#000000] shadow-sm hover:shadow",
-  outline: "border border-[#c8c5cb]/60 hover:border-[#000000] shadow-2xs",
-  muted: "border border-[#c8c5cb]/40 opacity-70",
-};
-const STATUS_BADGE: Record<StatusStyle, string> = {
-  solid: "bg-[#000000] text-[#ffffff]",
-  outline: "bg-[#e8e8ec] text-[#1a1c1f] border border-[#c8c5cb]/30",
-  muted: "bg-[#f3f3f7] text-[#5e5e67] border border-[#c8c5cb]/30",
-};
 
 export function ScheduleClient({
   projectId,
@@ -74,7 +21,11 @@ export function ScheduleClient({
   isToday,
   prevDate,
   nextDate,
-  week,
+  weekStaff,
+  weekLanes,
+  weekHourLabels,
+  weekTotalWidth,
+  weekLabel,
   customers,
   businessName,
   dayLabel,
@@ -96,7 +47,11 @@ export function ScheduleClient({
   isToday: boolean;
   prevDate: string;
   nextDate: string;
-  week: WeekData;
+  weekStaff: { id: string; name: string }[];
+  weekLanes: Record<string, StaffLane[]>;
+  weekHourLabels: { time: string; meridiem: string; current: boolean }[];
+  weekTotalWidth: number;
+  weekLabel: string;
   customers: { id: string; name: string }[];
   businessName: string;
   dayLabel: string;
@@ -111,26 +66,42 @@ export function ScheduleClient({
   totals: { totalGuests: number; inServiceCount: number; upcomingCount: number; completedCount: number };
   capacityPct: number | null;
   nextArrivals: { guestName: string; timeLabel: string; service: string; staffName: string | null; initials: string }[];
-  quickSlots: Extract<LaneItem, { type: "gap" }>[];
+  quickSlots: Gap[];
 }) {
   const [viewTab, setViewTab] = useState<"day" | "gap" | "week">("day");
   const [activeStylist, setActiveStylist] = useState<string>("all");
   const [stylistMenuOpen, setStylistMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
-  // The two dialogs: booking form (blank, or prefilled from an open slot) and
-  // the appointment that was clicked.
+  // The Week shows one stylist at a time (that is how the field does it).
+  const [weekStaffId, setWeekStaffId] = useState<string>(weekStaff[0]?.id || "anyone");
+  // The two side panels: the booking form (blank, or prefilled from an open
+  // slot) and the appointment that was clicked.
   const [booking, setBooking] = useState<{ prefill: BookingPrefill | null } | null>(null);
   const [openAppt, setOpenAppt] = useState<OpenAppointment | null>(null);
 
-  const bookSlot = (gap: Extract<LaneItem, { type: "gap" }>) =>
+  const bookSlot = (gap: Gap) =>
     setBooking({
       // An open stretch can be hours long; offer the first hour, she can widen it.
       prefill: {
         staffId: gap.staffId,
         start: hhmm(gap.startMinutesOfDay),
         end: hhmm(gap.startMinutesOfDay + Math.min(gap.minutes, 60)),
+        date: gap.date,
       },
+    });
+
+  const openAppointment = (item: Appointment) =>
+    setOpenAppt({
+      id: item.id,
+      guestName: item.guestName,
+      service: item.service,
+      timeLabel: item.timeLabel,
+      statusLabel: item.statusLabel,
+      status: item.status,
+      arrived: item.arrived,
+      href: item.href,
+      staffName: item.staffName,
     });
 
   const scrollTimeline = (left: number) => {
@@ -158,10 +129,89 @@ export function ScheduleClient({
   const allGaps = lanes
     .flatMap((lane) =>
       lane.items
-        .filter((it): it is Extract<LaneItem, { type: "gap" }> => it.type === "gap")
+        .filter((it): it is Gap => it.type === "gap")
         .map((it) => ({ ...it, laneName: lane.name })),
     )
     .sort((a, b) => a.startMinutesOfDay - b.startMinutesOfDay || a.laneName.localeCompare(b.laneName));
+
+  const weekRows = weekLanes[weekStaffId] ?? [];
+  const weekBookings = weekRows.reduce((s, l) => s + l.bookingsCount, 0);
+
+  const tabClass = (on: boolean) =>
+    "px-4 py-1.5 rounded-lg text-[13.5px] leading-5 font-normal leading-tight text-center transition-all active:scale-[0.97] " +
+    (on ? "bg-[#ffffff] text-[#1a1c1f] shadow-sm" : "text-[#5e5e67] hover:text-[#1a1c1f]");
+
+  const dayHeader = (
+    <div className="px-5 py-3 border-b border-[#c8c5cb]/30 flex flex-wrap items-center justify-between gap-3 bg-[#ffffff]">
+      <div className="flex items-center gap-3.5">
+        <div className="flex items-center gap-2">
+          <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#000000]">Timeline Flow</span>
+          <span className="text-[11.5px] font-mono px-2 py-0.5 rounded bg-[#eeedf1] text-[#5e5e67] border border-[#c8c5cb]/30">{shiftLabel}</span>
+        </div>
+        <span className="text-[#c8c5cb]/40 text-sm">|</span>
+        <div className="inline-flex p-0.5 rounded-lg bg-[#eeedf1] text-[#5e5e67] text-[11.5px]">
+          <button onClick={() => scrollTimeline(0)} className="px-2.5 py-1 rounded bg-[#ffffff] text-[#1a1c1f] font-medium shadow-2xs transition-all active:scale-[0.97]">
+            All Day
+          </button>
+          <button onClick={() => scrollTimeline(0)} className="px-2.5 py-1 rounded hover:text-[#1a1c1f] active:scale-[0.97] transition-colors">
+            Morning
+          </button>
+          <button onClick={() => scrollTimeline(totalWidth / 2)} className="px-2.5 py-1 rounded hover:text-[#1a1c1f] active:scale-[0.97] transition-colors">
+            Afternoon
+          </button>
+        </div>
+      </div>
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 text-[11px] text-[#5e5e67]">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded bg-[#000000]" /> In Service
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded bg-[#e8e8ec]/60 border border-[#c8c5cb]/40" /> Upcoming
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded border border-dashed border-[#c8c5cb]/60" /> Open Slot
+          </span>
+        </div>
+        {nowLeft !== null ? (
+          <div className="flex items-center gap-1.5 text-[11.5px] text-[#000000] font-mono bg-[#f3f3f7] px-2 py-1 rounded border border-[#c8c5cb]/30">
+            <span className="inline-block w-2 h-2 rounded-full bg-[#000000] animate-pulse" />
+            <span className="font-semibold">{nowLabel} NOW</span>
+          </div>
+        ) : isToday ? (
+          <div className="flex items-center gap-1.5 text-[11.5px] text-[#5e5e67] font-mono bg-[#f3f3f7] px-2 py-1 rounded border border-[#c8c5cb]/30">
+            <span>Outside shown hours ({nowLabel})</span>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  const weekHeader = (
+    <div className="px-5 py-3 border-b border-[#c8c5cb]/30 flex flex-wrap items-center justify-between gap-3 bg-[#ffffff]">
+      <div className="flex items-center gap-3">
+        <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#000000]">Week · {weekLabel}</span>
+        <select
+          aria-label="Week stylist"
+          value={weekStaffId}
+          onChange={(e) => setWeekStaffId(e.target.value)}
+          className="h-8 rounded-lg border border-[#c8c5cb]/50 bg-[#ffffff] px-2.5 text-[13px] text-[#1a1c1f] outline-none focus:border-[#000000]"
+        >
+          {weekStaff.map((s) => (
+            <option key={s.id || "anyone"} value={s.id || "anyone"}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex items-center gap-4 text-[11.5px] text-[#5e5e67]">
+        <span data-testid="week-count">
+          {weekBookings} {weekBookings === 1 ? "booking" : "bookings"} this week
+        </span>
+        <span>Click a day to open it · click an open stretch to book it</span>
+      </div>
+    </div>
+  );
 
   return (
     <div
@@ -195,35 +245,17 @@ export function ScheduleClient({
                     </span>
                   </div>
                   <div className="inline-flex items-center p-1 rounded-xl bg-[#f3f3f7] border border-[#c8c5cb]/30 select-none">
-                    <button
-                      onClick={() => setViewTab("day")}
-                      className={
-                        "px-4 py-1.5 rounded-lg text-[13.5px] leading-5 font-normal leading-tight text-center transition-all active:scale-[0.97] " +
-                        (viewTab === "day" ? "bg-[#ffffff] text-[#1a1c1f] shadow-sm" : "text-[#5e5e67] hover:text-[#1a1c1f]")
-                      }
-                    >
+                    <button onClick={() => setViewTab("day")} className={tabClass(viewTab === "day")}>
                       Day
                       <br />
                       <span className="font-medium text-[11px] text-[#5e5e67]">Schedule</span>
                     </button>
-                    <button
-                      onClick={() => setViewTab("gap")}
-                      className={
-                        "px-4 py-1.5 rounded-lg text-[13.5px] leading-5 font-normal leading-tight text-center transition-all active:scale-[0.97] " +
-                        (viewTab === "gap" ? "bg-[#ffffff] text-[#1a1c1f] shadow-sm" : "text-[#5e5e67] hover:text-[#1a1c1f]")
-                      }
-                    >
+                    <button onClick={() => setViewTab("gap")} className={tabClass(viewTab === "gap")}>
                       Gap &amp; Open
                       <br />
                       <span className="text-[11px]">Slots</span>
                     </button>
-                    <button
-                      onClick={() => setViewTab("week")}
-                      className={
-                        "px-4 py-1.5 rounded-lg text-[13.5px] leading-5 font-normal leading-tight text-center transition-all active:scale-[0.97] " +
-                        (viewTab === "week" ? "bg-[#ffffff] text-[#1a1c1f] shadow-sm" : "text-[#5e5e67] hover:text-[#1a1c1f]")
-                      }
-                    >
+                    <button onClick={() => setViewTab("week")} className={tabClass(viewTab === "week")}>
                       Week
                       <br />
                       <span className="text-[11px]">View</span>
@@ -361,8 +393,42 @@ export function ScheduleClient({
               </div>
             </div>
 
-            {/* Main Canvas: Gantt Flow & Dispatch Drawer */}
+            {/* Main Canvas */}
             <div className="p-8 flex gap-6 items-start">
+              {viewTab === "day" && (
+                <Timeline
+                  header={dayHeader}
+                  lanes={visibleLanes}
+                  hourLabels={hourLabels}
+                  totalWidth={totalWidth}
+                  nowLeft={nowLeft}
+                  nowLabel={nowLabel}
+                  laneHeader="Stylist / Chair"
+                  empty={
+                    lanes.length === 0
+                      ? "No staff members are set up yet."
+                      : `No stylist matches ${search ? `"${search}"` : "this filter"}${activeStylist !== "all" ? ` for ${activeStylist}` : ""}${statusFilter !== "all" ? ` in ${STATUS_PILLS.find((p) => p.key === statusFilter)?.label}` : ""}.`
+                  }
+                  onBookGap={bookSlot}
+                  onOpenAppt={openAppointment}
+                />
+              )}
+
+              {viewTab === "week" && (
+                <Timeline
+                  header={weekHeader}
+                  lanes={weekRows}
+                  hourLabels={weekHourLabels}
+                  totalWidth={weekTotalWidth}
+                  nowLeft={null}
+                  nowLabel={nowLabel}
+                  laneHeader="Day"
+                  empty="No staff members are set up yet."
+                  onBookGap={bookSlot}
+                  onOpenAppt={openAppointment}
+                />
+              )}
+
               {/* Gap & Open Slots: every open stretch of the day, biggest picture of where a walk-in fits */}
               {viewTab === "gap" && (
                 <div className="flex-1 min-w-0 bg-[#ffffff] border border-[#c8c5cb]/40 rounded-xl shadow-sm flex flex-col overflow-hidden">
@@ -402,300 +468,6 @@ export function ScheduleClient({
                     </div>
                   )}
                 </div>
-              )}
-
-              {/* Week View: bookings per stylist per day; a day opens that day's schedule */}
-              {viewTab === "week" && (
-                <div className="flex-1 min-w-0 bg-[#ffffff] border border-[#c8c5cb]/40 rounded-xl shadow-sm overflow-hidden">
-                  <div className="px-5 py-3 border-b border-[#c8c5cb]/30 flex items-center justify-between">
-                    <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#000000]">
-                      Week · {week.label}
-                    </span>
-                    <span className="text-[11.5px] text-[#5e5e67]">Bookings per stylist · click a day to open it</span>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table data-testid="week-table" className="w-full text-left text-[13px]">
-                      <thead>
-                        <tr className="bg-[#f3f3f7] border-b border-[#c8c5cb]/30">
-                          <th className="py-3 px-4 text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67]">Stylist</th>
-                          {week.days.map((d) => (
-                            <th key={d.date} className="py-2 px-2 text-center">
-                              <Link
-                                href={`${SCHEDULE}?date=${d.date}`}
-                                data-testid="week-day"
-                                className={
-                                  "inline-flex flex-col items-center px-3 py-1 rounded-lg transition-colors " +
-                                  (d.isSelected ? "bg-[#000000] text-[#ffffff]" : "hover:bg-[#eeedf1] text-[#1a1c1f]")
-                                }
-                              >
-                                <span className="text-[11px] font-medium uppercase">{d.weekday}</span>
-                                <span className="text-[15px] font-semibold leading-tight">{d.dayNum}</span>
-                                {d.isToday && <span className="text-[9px] uppercase tracking-wider">today</span>}
-                              </Link>
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#c8c5cb]/20">
-                        {week.rows.length === 0 && (
-                          <tr>
-                            <td colSpan={8} className="p-10 text-center text-[13.5px] text-[#5e5e67]">
-                              No staff members are set up yet.
-                            </td>
-                          </tr>
-                        )}
-                        {week.rows.map((r) => (
-                          <tr key={r.id || "anyone"}>
-                            <td className="py-3 px-4 font-medium text-[#1a1c1f]">{r.name}</td>
-                            {r.counts.map((n, i) => (
-                              <td key={i} className="py-3 px-2 text-center tabular-nums">
-                                {n > 0 ? (
-                                  <span className="inline-flex min-w-7 justify-center px-2 py-0.5 rounded bg-[#eeedf1] text-[#1a1c1f] font-semibold">{n}</span>
-                                ) : (
-                                  <span className="text-[#c8c5cb]">–</span>
-                                )}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                        <tr className="bg-[#f3f3f7]/50">
-                          <td className="py-3 px-4 text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67]">All stylists</td>
-                          {week.days.map((d) => (
-                            <td key={d.date} data-testid="week-total" className="py-3 px-2 text-center tabular-nums font-semibold text-[#1a1c1f]">
-                              {d.total}
-                            </td>
-                          ))}
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Timeline Board */}
-              {viewTab === "day" && (
-              <div className="flex-1 min-w-0 bg-[#ffffff] border border-[#c8c5cb]/40 rounded-xl shadow-sm flex flex-col overflow-hidden">
-                <div className="px-5 py-3 border-b border-[#c8c5cb]/30 flex flex-wrap items-center justify-between gap-3 bg-[#ffffff]">
-                  <div className="flex items-center gap-3.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#000000] font-semibold">
-                        Timeline Flow
-                      </span>
-                      <span className="text-[11.5px] font-mono px-2 py-0.5 rounded bg-[#eeedf1] text-[#5e5e67] border border-[#c8c5cb]/30">
-                        {shiftLabel}
-                      </span>
-                    </div>
-                    <span className="text-[#c8c5cb]/40 text-sm">|</span>
-                    <div className="inline-flex p-0.5 rounded-lg bg-[#eeedf1] text-[#5e5e67] text-[11.5px]">
-                      <button
-                        onClick={() => scrollTimeline(0)}
-                        className="px-2.5 py-1 rounded bg-[#ffffff] text-[#1a1c1f] font-medium shadow-2xs transition-all active:scale-[0.97]"
-                      >
-                        All Day
-                      </button>
-                      <button onClick={() => scrollTimeline(0)} className="px-2.5 py-1 rounded hover:text-[#1a1c1f] active:scale-[0.97] transition-colors">
-                        Morning
-                      </button>
-                      <button onClick={() => scrollTimeline(totalWidth / 2)} className="px-2.5 py-1 rounded hover:text-[#1a1c1f] active:scale-[0.97] transition-colors">
-                        Afternoon
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3 text-[11px] text-[#5e5e67]">
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded bg-[#000000]" /> In Service
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded bg-[#e8e8ec]/60 border border-[#c8c5cb]/40" /> Upcoming
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded border border-dashed border-[#c8c5cb]/60" /> Open Slot
-                      </span>
-                    </div>
-                    {nowLeft !== null ? (
-                      <div className="flex items-center gap-1.5 text-[11.5px] text-[#000000] font-mono bg-[#f3f3f7] px-2 py-1 rounded border border-[#c8c5cb]/30">
-                        <span className="inline-block w-2 h-2 rounded-full bg-[#000000] animate-pulse" />
-                        <span className="font-semibold">{nowLabel} NOW</span>
-                      </div>
-                    ) : isToday ? (
-                      <div className="flex items-center gap-1.5 text-[11.5px] text-[#5e5e67] font-mono bg-[#f3f3f7] px-2 py-1 rounded border border-[#c8c5cb]/30">
-                        <span>Outside shown hours ({nowLabel})</span>
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-
-                {/* Grid */}
-                <div className="relative w-full flex overflow-hidden">
-                  {/* Sticky stylist column */}
-                  <div className="w-[200px] shrink-0 border-r border-[#c8c5cb]/30 bg-[#ffffff] z-20 shadow-sm flex flex-col">
-                    <div className="h-12 px-4 py-2.5 text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67] flex items-center justify-between border-b border-[#c8c5cb]/30 bg-[#f3f3f7]">
-                      <span>Stylist / Chair</span>
-                      <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">swap_vert</span>
-                    </div>
-                    <div className="divide-y divide-[#c8c5cb]/20 flex flex-col">
-                      {visibleLanes.map((lane) => (
-                        <div key={lane.id} className="h-[148px] p-3.5 flex flex-col justify-between bg-[#ffffff]">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-[#000000] shrink-0" />
-                              <span className="text-[13.5px] leading-5 font-normal font-semibold text-[#1a1c1f] truncate">
-                                {lane.name}
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-[#5e5e67] mt-0.5">{lane.role || "Stylist"}</p>
-                          </div>
-                          <div className="flex items-center justify-between text-[11.5px] text-[#5e5e67] pt-2 border-t border-[#c8c5cb]/20">
-                            <span className="font-medium text-[#1a1c1f]">{lane.bookingsCount} Booking{lane.bookingsCount === 1 ? "" : "s"}</span>
-                            <span
-                              className={
-                                "font-mono font-semibold px-1.5 py-0.5 rounded border border-[#c8c5cb]/30 " +
-                                (lane.loadTone === "primary" ? "text-[#000000] bg-[#f3f3f7]" : "text-[#5e5e67] font-medium bg-[#f3f3f7]")
-                              }
-                            >
-                              {lane.loadPct}% Load
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Scrollable timeline area */}
-                  <div id="timeline-scroll-area" className="flex-1 overflow-x-auto overflow-y-hidden select-none">
-                    <div className="relative" style={{ width: totalWidth }}>
-                      {/* Hour header */}
-                      <div className="h-12 flex border-b border-[#c8c5cb]/30 bg-[#f3f3f7]">
-                        {hourLabels.map((h) => (
-                          <div
-                            key={h.time + h.meridiem}
-                            className={
-                              "w-[160px] shrink-0 py-2 text-center border-r border-[#c8c5cb]/20 flex flex-col justify-center items-center " +
-                              (h.current ? "bg-[#eeedf1]/70" : "")
-                            }
-                          >
-                            <span className={"font-mono font-semibold text-[13px] " + (h.current ? "text-[#000000]" : "text-[#1a1c1f]")}>
-                              {h.time}
-                            </span>
-                            <span className={"text-[9.5px] font-mono " + (h.current ? "text-[#000000] font-semibold" : "text-[#5e5e67]")}>
-                              {h.meridiem}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="relative divide-y divide-[#c8c5cb]/20 bg-[#ffffff]">
-                        {nowLeft !== null && (
-                          <div className="absolute top-0 bottom-0 z-30 pointer-events-none flex flex-col items-center" style={{ left: nowLeft }}>
-                            <div className="bg-[#000000] text-[#ffffff] px-2.5 py-0.5 rounded text-[10px] font-mono font-semibold shadow-md -mt-3.5 z-40 flex items-center gap-1.5 border border-[#ffffff]">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#ba1a1a] animate-pulse" />
-                              <span>{nowLabel} NOW</span>
-                            </div>
-                            <div className="w-[2px] h-full bg-[#000000] shadow-sm" />
-                          </div>
-                        )}
-
-                        {visibleLanes.map((lane) => (
-                          <div key={lane.id} className="h-[148px] relative py-2.5 px-2">
-                            {lane.items.map((item, i) => {
-                              if (item.type === "gap") {
-                                return (
-                                  <div
-                                    key={`gap-${i}`}
-                                    className="absolute top-2.5 bottom-2.5"
-                                    style={{ left: item.left + 8, width: Math.max(item.width - 16, 40) }}
-                                  >
-                                    <button
-                                      onClick={() => bookSlot(item)}
-                                      className="h-full w-full rounded-lg border-2 border-dashed border-[#c8c5cb]/50 hover:border-[#000000] text-[#5e5e67] hover:text-[#1a1c1f] flex flex-col items-center justify-center p-2 hover:bg-[#f3f3f7]/60 transition-all text-center"
-                                    >
-                                      <span className="material-symbols-outlined text-[16px] text-[#000000]">add_circle</span>
-                                      <span className="text-[11px] font-mono text-[#000000] font-bold mt-1">{item.timeLabel}</span>
-                                      <span className="text-[10px] text-[#5e5e67]">{item.minutes} min Open</span>
-                                    </button>
-                                  </div>
-                                );
-                              }
-                              if (item.type === "block") {
-                                return (
-                                  <div
-                                    key={`block-${i}`}
-                                    className="absolute top-2.5 bottom-2.5"
-                                    style={{ left: item.left + 8, width: Math.max(item.width - 16, 40) }}
-                                  >
-                                    <div className="h-full w-full rounded-lg border border-[#c8c5cb]/30 bg-[#f3f3f7]/30 flex flex-col items-center justify-center p-2 text-[#5e5e67] text-center">
-                                      <span className="text-[11px] font-bold text-[#1a1c1f]">{item.label}</span>
-                                      <span className="text-[10px] font-mono text-[#5e5e67] mt-0.5">{item.timeLabel}</span>
-                                    </div>
-                                  </div>
-                                );
-                              }
-                              return (
-                                <div
-                                  key={item.id}
-                                  className="absolute top-2.5 bottom-2.5 z-10"
-                                  style={{ left: item.left + 8, width: Math.max(item.width - 16, 60) }}
-                                >
-                                  <div
-                                    onClick={() =>
-                                      setOpenAppt({
-                                        id: item.id,
-                                        guestName: item.guestName,
-                                        service: item.service,
-                                        timeLabel: item.timeLabel,
-                                        statusLabel: item.statusLabel,
-                                        status: item.status,
-                                        arrived: item.arrived,
-                                        href: item.href,
-                                        staffName: item.staffName,
-                                      })
-                                    }
-                                    data-testid="appt-card"
-                                    className={
-                                      "h-full bg-[#ffffff] rounded-lg p-3 flex flex-col justify-between transition-all cursor-pointer " +
-                                      STATUS_STYLE[item.statusStyle as keyof typeof STATUS_STYLE]
-                                    }
-                                  >
-                                    <div>
-                                      <div className="flex items-center justify-between gap-1">
-                                        <span className="font-bold text-[13px] text-[#1a1c1f] truncate">{item.guestName}</span>
-                                        <span
-                                          className={
-                                            "px-2 py-0.5 rounded text-[9.5px] font-mono font-bold shrink-0 " +
-                                            STATUS_BADGE[item.statusStyle as keyof typeof STATUS_BADGE]
-                                          }
-                                        >
-                                          {item.statusLabel}
-                                        </span>
-                                      </div>
-                                      <p className="text-[11.5px] text-[#47464b] font-medium mt-1 truncate">{item.service}</p>
-                                    </div>
-                                    <div className="text-[10.5px] font-mono text-[#5e5e67] border-t border-[#c8c5cb]/20 pt-1.5">
-                                      {item.timeLabel}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ))}
-
-                        {visibleLanes.length === 0 && (
-                          <div className="p-10 flex flex-col items-center justify-center gap-2 text-center">
-                            <span className="material-symbols-outlined text-[28px] text-[#c8c5cb]">search_off</span>
-                            <p className="text-[13.5px] font-medium text-[#5e5e67]">
-                              {lanes.length === 0
-                                ? "No staff members are set up yet."
-                                : `No stylist matches ${search ? `"${search}"` : "this filter"}${activeStylist !== "all" ? ` for ${activeStylist}` : ""}${statusFilter !== "all" ? ` in ${STATUS_PILLS.find((p) => p.key === statusFilter)?.label}` : ""}.`}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
               )}
 
               {/* Right Side: Daily Capacity & Booking Triage */}
@@ -819,17 +591,17 @@ export function ScheduleClient({
       </div>
 
       {booking && (
-        <BookingDialog
+        <BookingSheet
           projectId={projectId}
           dateStr={dateStr}
           dayLabel={dayLabel}
           customers={customers}
-          staff={lanes.map((l) => ({ id: l.id, name: l.name }))}
+          staff={lanes.filter((l) => l.id !== "anyone").map((l) => ({ id: l.id, name: l.name }))}
           prefill={booking.prefill}
           onClose={() => setBooking(null)}
         />
       )}
-      {openAppt && <AppointmentDialog appt={openAppt} onClose={() => setOpenAppt(null)} />}
+      {openAppt && <AppointmentSheet appt={openAppt} onClose={() => setOpenAppt(null)} />}
     </div>
   );
 }

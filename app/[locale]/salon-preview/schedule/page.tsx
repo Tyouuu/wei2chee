@@ -9,7 +9,8 @@ import {
   type BusinessContext,
 } from "@/lib/templates/industry-template";
 import { MaterialSymbolsLink } from "../salon-shell";
-import { ScheduleClient, type StaffLane, type LaneItem } from "./schedule-client";
+import { ScheduleClient } from "./schedule-client";
+import type { LaneItem, StaffLane } from "./schedule-timeline";
 
 function nowMs(): number {
   return Date.now();
@@ -55,7 +56,7 @@ function nowMs(): number {
  * won't have adopted that feature yet), it honestly falls back to "Full
  * Roster · N Stylists" rather than claiming zero people are working.
  *
- * ── Task 415: every control here is now backed by a table ─────────────────
+ * ── Task 415 / 416: every control here is now backed by a table ──────────
  *
  * This page used to answer half its buttons with an alert saying "isn't
  * wired up yet". Now, with nothing new in the database:
@@ -64,14 +65,22 @@ function nowMs(): number {
  *                          date falls back to today); the query, the "now"
  *                          line and "next arrivals" follow the chosen day.
  *   - Gap & Open Slots     every open stretch of the day, each one bookable.
- *   - Week                 bookings per stylist per day (cancelled ones not
- *                          counted), a day links to that day.
- *   - New Appointment, a   add_appointment, through a dialog that can
- *     gap, Book Slot,      prefill stylist and time from a gap. The database
- *     Custom Time Slot     answers a clash in its own words, shown as they are.
+ *   - Week                 ONE stylist's week, a row per day on the same
+ *                          timeline as the Day view (Mangomint and Fresha
+ *                          both show a week for one team member at a time;
+ *                          the first version here was an all-stylists count
+ *                          table, which is not how the field does it).
+ *   - New Appointment, a   add_appointment, from a side panel that keeps the
+ *     gap, Book Slot,      calendar in view. The database answers a clash in
+ *     Custom Time Slot     its own words, shown as they are.
  *   - Click an appointment mark_appointment_arrived / set_appointment_status
  *                          (done, no show, cancelled) + a link to its record.
  *                          Marking done says which package session was used.
+ *
+ * A booking with no stylist ("Anyone") holds the whole shop's slot and used
+ * to have no row to sit in -- it counted in the totals but was invisible on
+ * the grid. It now gets an "Anyone" row (bookings only, no open slots: a gap
+ * there would mean nothing).
  */
 export default async function SalonSchedulePreview({
   params,
@@ -111,8 +120,6 @@ export default async function SalonSchedulePreview({
   const isToday = dateStr === todayStr;
   const prevDate = shiftDate(dateStr, -1);
   const nextDate = shiftDate(dateStr, 1);
-  const dayStartUtc = `${dateStr}T00:00:00+08:00`;
-  const dayEndUtc = `${dateStr}T23:59:59.999+08:00`;
   const dayLabel = new Intl.DateTimeFormat("en-MY", {
     timeZone: "Asia/Kuala_Lumpur",
     weekday: "long",
@@ -121,12 +128,14 @@ export default async function SalonSchedulePreview({
     year: "numeric",
   }).format(new Date(`${dateStr}T12:00:00+08:00`));
 
-  // The week (Monday first) the chosen day sits in, for the Week view.
+  // The week (Monday first) the chosen day sits in. One query reads all of it;
+  // the day view is the slice of it that falls on the chosen day.
   const mondayOffset = (new Date(`${dateStr}T00:00:00Z`).getUTCDay() + 6) % 7;
   const weekStart = shiftDate(dateStr, -mondayOffset);
   const weekEnd = shiftDate(weekStart, 6);
+  const weekDates = Array.from({ length: 7 }, (_, i) => shiftDate(weekStart, i));
 
-  const [staffRes, apptRes, clockedInRes, weekRes, customerRes] = await Promise.all([
+  const [staffRes, weekRes, clockedInRes, customerRes] = await Promise.all([
     supabase
       .from("directory_entries")
       .select("id, name, status")
@@ -140,20 +149,10 @@ export default async function SalonSchedulePreview({
       .eq("project_id", projectId)
       .eq("module_key", "bookings")
       .is("archived_at", null)
-      .gte("starts_at", dayStartUtc)
-      .lte("starts_at", dayEndUtc)
+      .gte("starts_at", `${weekStart}T00:00:00+08:00`)
+      .lte("starts_at", `${weekEnd}T23:59:59.999+08:00`)
       .order("starts_at"),
     supabase.rpc("who_is_clocked_in", { in_project_id: projectId }),
-    supabase
-      .from("appointments")
-      .select("staff_id, starts_at")
-      .eq("project_id", projectId)
-      .eq("module_key", "bookings")
-      .eq("kind", "booking")
-      .is("archived_at", null)
-      .neq("status", "cancelled")
-      .gte("starts_at", `${weekStart}T00:00:00+08:00`)
-      .lte("starts_at", `${weekEnd}T23:59:59.999+08:00`),
     supabase
       .from("directory_entries")
       .select("id, name")
@@ -178,12 +177,14 @@ export default async function SalonSchedulePreview({
     source: "staff" | "website";
   };
   const staffRows = (staffRes.data ?? []) as StaffRow[];
-  const apptRows = (apptRes.data ?? []) as ApptRow[];
+  const weekAppts = (weekRes.data ?? []) as ApptRow[];
   const clockedIn = (clockedInRes.data ?? []) as { staff_id: string }[];
   const clockedInIds = new Set(clockedIn.map((c) => c.staff_id));
 
-  // ── Timeline window: his own 09:00-18:00 default, widened only if real
-  // data falls outside it (never clip a real booking off-grid).
+  const dayKey = (iso: string) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date(iso));
+  const apptRows = weekAppts.filter((a) => dayKey(a.starts_at) === dateStr);
+
   const minutesSinceMidnightMY = (iso: string) => {
     const parts = new Intl.DateTimeFormat("en-GB", {
       timeZone: "Asia/Kuala_Lumpur",
@@ -196,40 +197,43 @@ export default async function SalonSchedulePreview({
     return h * 60 + m;
   };
 
-  let windowStartHour = 9;
-  let windowEndHour = 18;
-  for (const a of apptRows) {
-    windowStartHour = Math.min(windowStartHour, Math.floor(minutesSinceMidnightMY(a.starts_at) / 60));
-    windowEndHour = Math.max(windowEndHour, Math.ceil(minutesSinceMidnightMY(a.ends_at) / 60));
-  }
-  windowStartHour = Math.max(0, windowStartHour);
-  windowEndHour = Math.min(24, windowEndHour);
-  if (windowEndHour <= windowStartHour) windowEndHour = windowStartHour + 1;
+  // ── Timeline window: his own 09:00-18:00 default, widened only if real
+  // data falls outside it (never clip a real booking off-grid). The Day and
+  // the Week each get the window their own data needs.
+  const windowFor = (appts: ApptRow[]) => {
+    let sh = 9;
+    let eh = 18;
+    for (const a of appts) {
+      sh = Math.min(sh, Math.floor(minutesSinceMidnightMY(a.starts_at) / 60));
+      eh = Math.max(eh, Math.ceil(minutesSinceMidnightMY(a.ends_at) / 60));
+    }
+    sh = Math.max(0, sh);
+    eh = Math.min(24, eh);
+    if (eh <= sh) eh = sh + 1;
+    return { sh, eh, startMin: sh * 60, endMin: eh * 60, totalWidth: (eh - sh) * 160 };
+  };
+  type Win = ReturnType<typeof windowFor>;
 
   const PX_PER_MIN = 160 / 60;
-  const windowStartMin = windowStartHour * 60;
-  const windowEndMin = windowEndHour * 60;
-  const totalWidth = (windowEndHour - windowStartHour) * 160;
-  // 24-hour, matching the source's own literal label ("09:00 - 18:00 (9h
-  // Shift)") -- reconstructing this from the already-12-hour-formatted
-  // hourLabels array below lost the AM/PM distinction (18:00 became "06:00"
-  // with no meridiem), so it's computed directly from the raw hour numbers.
-  const shiftLabel = `${String(windowStartHour).padStart(2, "0")}:00 - ${String(windowEndHour).padStart(2, "0")}:00 (${windowEndHour - windowStartHour}h Shift)`;
-  const leftFor = (iso: string) => (minutesSinceMidnightMY(iso) - windowStartMin) * PX_PER_MIN;
-  const widthFor = (startIso: string, endIso: string) =>
-    (minutesSinceMidnightMY(endIso) - minutesSinceMidnightMY(startIso)) * PX_PER_MIN;
-
-  const hourLabels: { time: string; meridiem: string; current: boolean }[] = [];
   const nowMinutes = minutesSinceMidnightMY(new Date().toISOString());
   const currentHour = Math.floor(nowMinutes / 60);
-  for (let h = windowStartHour; h < windowEndHour; h++) {
-    const meridiem = h < 12 ? "AM" : "PM";
-    const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
-    hourLabels.push({ time: `${String(displayHour).padStart(2, "0")}:00`, meridiem, current: h === currentHour });
-  }
-  // The "now" line only means something on today's grid.
-  const nowInWindow = isToday && nowMinutes >= windowStartMin && nowMinutes < windowEndMin;
-  const nowLeft = nowInWindow ? (nowMinutes - windowStartMin) * PX_PER_MIN : null;
+
+  const hourLabelsFor = (win: Win, highlightNow: boolean) => {
+    const out: { time: string; meridiem: string; current: boolean }[] = [];
+    for (let h = win.sh; h < win.eh; h++) {
+      const meridiem = h < 12 ? "AM" : "PM";
+      const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      out.push({ time: `${String(displayHour).padStart(2, "0")}:00`, meridiem, current: highlightNow && h === currentHour });
+    }
+    return out;
+  };
+
+  const dayWin = windowFor(apptRows);
+  // 24-hour, matching the source's own literal label ("09:00 - 18:00 (9h
+  // Shift)").
+  const shiftLabel = `${String(dayWin.sh).padStart(2, "0")}:00 - ${String(dayWin.eh).padStart(2, "0")}:00 (${dayWin.eh - dayWin.sh}h Shift)`;
+  const nowInWindow = isToday && nowMinutes >= dayWin.startMin && nowMinutes < dayWin.endMin;
+  const nowLeft = nowInWindow ? (nowMinutes - dayWin.startMin) * PX_PER_MIN : null;
   const nowLabel = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Kuala_Lumpur",
     hour: "2-digit",
@@ -259,32 +263,35 @@ export default async function SalonSchedulePreview({
 
   const GAP_MIN_MINUTES = 15;
 
-  const lanes: StaffLane[] = staffRows.map((staff) => {
-    const mine = apptRows
-      .filter((a) => a.staff_id === staff.id)
-      .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+  /** One row of the timeline: the given appointments laid out on `win`. */
+  const buildRow = (win: Win, mine: ApptRow[], staffId: string, staffName: string, date: string, allowGaps: boolean) => {
+    const sorted = [...mine].sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+    const leftFor = (iso: string) => (minutesSinceMidnightMY(iso) - win.startMin) * PX_PER_MIN;
+    const widthFor = (startIso: string, endIso: string) =>
+      (minutesSinceMidnightMY(endIso) - minutesSinceMidnightMY(startIso)) * PX_PER_MIN;
 
     const items: LaneItem[] = [];
-    let cursor = windowStartMin;
+    let cursor = win.startMin;
     let busyMinutes = 0;
     const statuses = new Set<"inService" | "upcoming" | "completed">();
     const searchParts: string[] = [];
 
     const pushGap = (fromMin: number, toMin: number) => {
-      if (toMin - fromMin < GAP_MIN_MINUTES) return;
+      if (!allowGaps || toMin - fromMin < GAP_MIN_MINUTES) return;
       items.push({
         type: "gap",
-        left: (fromMin - windowStartMin) * PX_PER_MIN,
+        left: (fromMin - win.startMin) * PX_PER_MIN,
         width: (toMin - fromMin) * PX_PER_MIN,
         startMinutesOfDay: fromMin,
         timeLabel: `${String(Math.floor(fromMin / 60)).padStart(2, "0")}:${String(fromMin % 60).padStart(2, "0")} - ${String(Math.floor(toMin / 60)).padStart(2, "0")}:${String(toMin % 60).padStart(2, "0")}`,
         minutes: toMin - fromMin,
-        staffName: staff.name,
-        staffId: staff.id,
+        staffName,
+        staffId,
+        date,
       });
     };
 
-    for (const a of mine) {
+    for (const a of sorted) {
       const startMin = minutesSinceMidnightMY(a.starts_at);
       const endMin = minutesSinceMidnightMY(a.ends_at);
       if (startMin > cursor) pushGap(cursor, startMin);
@@ -314,47 +321,71 @@ export default async function SalonSchedulePreview({
           status: a.status,
           arrived: !!a.arrived_at,
           href: `/${locale}/portal/bookings/${a.id}`,
-          staffName: staff.name,
+          staffName: staffName,
         });
       }
-      busyMinutes += Math.min(endMin, windowEndMin) - Math.max(startMin, windowStartMin);
+      busyMinutes += Math.min(endMin, win.endMin) - Math.max(startMin, win.startMin);
       cursor = Math.max(cursor, endMin);
     }
-    if (cursor < windowEndMin) pushGap(cursor, windowEndMin);
-    if (mine.length === 0) {
+    if (cursor < win.endMin) pushGap(cursor, win.endMin);
+    if (sorted.length === 0) {
       // A clean day for this stylist -- one honest "open all day" block
       // rather than an empty, blank-looking row.
       items.length = 0;
-      pushGap(windowStartMin, windowEndMin);
+      pushGap(win.startMin, win.endMin);
     }
 
-    const loadPct = Math.round((busyMinutes / (windowEndMin - windowStartMin)) * 100);
+    const loadPct = Math.round((busyMinutes / (win.endMin - win.startMin)) * 100);
+    const bookings = sorted.filter((a) => a.kind === "booking" && a.status !== "cancelled").length;
+    return { items, statuses: [...statuses], searchText: `${staffName} ${searchParts.join(" ")}`.toLowerCase(), loadPct, bookings };
+  };
 
+  // ── The Day: one row per stylist, plus an "Anyone" row when some bookings
+  // were not given to a stylist (they hold the whole shop's slot, and would
+  // otherwise have nowhere to be drawn).
+  const lanes: StaffLane[] = staffRows.map((staff) => {
+    const row = buildRow(dayWin, apptRows.filter((a) => a.staff_id === staff.id), staff.id, staff.name, dateStr, true);
     return {
       id: staff.id,
       name: staff.name,
-      role: (staff.status ?? "").trim(),
-      bookingsCount: mine.length,
-      loadPct,
-      loadTone: loadPct >= 70 ? "primary" : "secondary",
-      statuses: [...statuses],
-      searchText: `${staff.name} ${searchParts.join(" ")}`.toLowerCase(),
-      items,
+      role: (staff.status ?? "").trim() || "Stylist",
+      bookingsCount: row.bookings,
+      loadPct: row.loadPct,
+      loadTone: row.loadPct >= 70 ? "primary" : "secondary",
+      statuses: row.statuses,
+      searchText: row.searchText,
+      items: row.items,
     };
   });
+  const unassigned = apptRows.filter((a) => a.staff_id == null);
+  if (unassigned.length > 0) {
+    const row = buildRow(dayWin, unassigned, "", "Anyone", dateStr, false);
+    lanes.push({
+      id: "anyone",
+      name: "Anyone",
+      role: "Not given to a stylist",
+      bookingsCount: row.bookings,
+      loadPct: row.loadPct,
+      loadTone: "secondary",
+      statuses: row.statuses,
+      searchText: row.searchText,
+      items: row.items,
+    });
+  }
 
   const totalGuests = apptRows.filter((a) => a.kind === "booking").length;
   const inServiceCount = apptRows.filter((a) => a.kind === "booking" && statusLabelOf(a).bucket === "inService").length;
   const upcomingCount = apptRows.filter((a) => a.kind === "booking" && statusLabelOf(a).bucket === "upcoming").length;
   const completedCount = apptRows.filter((a) => a.kind === "booking" && statusLabelOf(a).bucket === "completed").length;
 
-  const totalBusyMinutes = lanes.reduce(
+  const staffLanes = lanes.filter((l) => l.id !== "anyone");
+  const totalBusyMinutes = staffLanes.reduce(
     (sum, l) => sum + l.items.filter((it) => it.type !== "gap").reduce((s2, it) => s2 + it.width / PX_PER_MIN, 0),
     0,
   );
   const capacityPct =
     staffRows.length > 0
-      ? Math.round((totalBusyMinutes / (staffRows.length * (windowEndMin - windowStartMin))) * 100)
+      ? Math.round((totalBusyMinutes / (staffRows.length * (dayWin.endMin - dayWin.startMin))) * 100)
       : null;
 
   const nextArrivals = apptRows
@@ -386,7 +417,7 @@ export default async function SalonSchedulePreview({
         .join(""),
     }));
 
-  const quickSlots = lanes
+  const quickSlots = staffLanes
     .flatMap((lane) =>
       lane.items
         .filter((it): it is Extract<LaneItem, { type: "gap" }> => it.type === "gap" && it.minutes >= 30)
@@ -395,38 +426,37 @@ export default async function SalonSchedulePreview({
     .sort((a, b) => a.startMinutesOfDay - b.startMinutesOfDay)
     .slice(0, 3);
 
-  // ── Week view: bookings per stylist per day, from the week's own query.
-  const dayKey = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date(iso));
-  const weekDates = Array.from({ length: 7 }, (_, i) => shiftDate(weekStart, i));
-  const weekCounts = new Map<string, number[]>(); // staff id (or "" for unassigned) -> 7 counts
-  for (const a of ((weekRes.data ?? []) as { staff_id: string | null; starts_at: string }[])) {
-    const idx = weekDates.indexOf(dayKey(a.starts_at));
-    if (idx < 0) continue;
-    const k = a.staff_id ?? "";
-    const row = weekCounts.get(k) ?? [0, 0, 0, 0, 0, 0, 0];
-    row[idx] += 1;
-    weekCounts.set(k, row);
-  }
-  const weekRows = [
-    ...staffRows.map((s) => ({ id: s.id, name: s.name, counts: weekCounts.get(s.id) ?? [0, 0, 0, 0, 0, 0, 0] })),
-    ...(weekCounts.has("") ? [{ id: "", name: "Anyone", counts: weekCounts.get("") as number[] }] : []),
-  ];
+  // ── The Week: for each stylist, a row per day on one shared window.
+  const weekWin = windowFor(weekAppts);
   const shortDate = (d: string, year: boolean) =>
     new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", day: "numeric", month: "short", ...(year ? { year: "numeric" as const } : {}) }).format(
       new Date(`${d}T00:00:00Z`),
     );
-  const week = {
-    label: `${shortDate(weekStart, false)} – ${shortDate(weekEnd, true)}`,
-    days: weekDates.map((d, i) => ({
-      date: d,
-      weekday: new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "short" }).format(new Date(`${d}T00:00:00Z`)),
-      dayNum: Number(d.slice(8, 10)),
-      isSelected: d === dateStr,
-      isToday: d === todayStr,
-      total: weekRows.reduce((s, r) => s + r.counts[i], 0),
-    })),
-    rows: weekRows,
-  };
+  const weekStaff = [
+    ...staffRows.map((s) => ({ id: s.id, name: s.name })),
+    ...(weekAppts.some((a) => a.staff_id == null) ? [{ id: "", name: "Anyone" }] : []),
+  ];
+  const weekLanes: Record<string, StaffLane[]> = {};
+  for (const s of weekStaff) {
+    weekLanes[s.id || "anyone"] = weekDates.map((d) => {
+      const mine = weekAppts.filter((a) => (a.staff_id ?? "") === s.id && dayKey(a.starts_at) === d);
+      const row = buildRow(weekWin, mine, s.id, s.name, d, s.id !== "");
+      const wd = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "short" }).format(new Date(`${d}T00:00:00Z`));
+      return {
+        id: `${s.id || "anyone"}:${d}`,
+        name: `${wd} ${Number(d.slice(8, 10))}`,
+        role: d === todayStr ? "Today" : shortDate(d, false).replace(/^\d+ /, ""),
+        bookingsCount: row.bookings,
+        loadPct: row.loadPct,
+        loadTone: row.loadPct >= 70 ? "primary" : "secondary",
+        statuses: [],
+        searchText: "",
+        items: row.items,
+        href: `/en/salon-preview/schedule?date=${d}`,
+        isToday: d === todayStr,
+      } satisfies StaffLane;
+    });
+  }
 
   return (
     <>
@@ -437,14 +467,18 @@ export default async function SalonSchedulePreview({
         isToday={isToday}
         prevDate={prevDate}
         nextDate={nextDate}
-        week={week}
+        weekStaff={weekStaff}
+        weekLanes={weekLanes}
+        weekHourLabels={hourLabelsFor(weekWin, false)}
+        weekTotalWidth={weekWin.totalWidth}
+        weekLabel={`${shortDate(weekStart, false)} – ${shortDate(weekEnd, true)}`}
         customers={((customerRes.data ?? []) as { id: string; name: string }[]).map((c) => ({ id: c.id, name: c.name }))}
         businessName={businessName}
         dayLabel={dayLabel}
         lanes={lanes}
-        hourLabels={hourLabels}
+        hourLabels={hourLabelsFor(dayWin, isToday)}
         shiftLabel={shiftLabel}
-        totalWidth={totalWidth}
+        totalWidth={dayWin.totalWidth}
         nowLeft={nowLeft}
         nowLabel={nowLabel}
         rosterCount={staffRows.length}
