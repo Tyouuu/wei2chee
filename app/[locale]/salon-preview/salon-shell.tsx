@@ -71,8 +71,16 @@ import Link from "next/link";
  * Cash, as that source ordered them). Its embedded sidebar had no icons at
  * all, so the two icons here are this file's own picks.
  *
- * Every row under Management has a real page behind it except Memberships &
- * Loyalty and Tenant Settings.
+ * The Memberships & VIP Passes source (2026-09-24, right after) gave that
+ * greyed row its page, and its own icon ("loyalty") and its own label
+ * ("Memberships") are adopted for its own row under the same rule. The
+ * longer "Memberships & Loyalty" (from the Reports source) wrapped onto two
+ * lines in the active pill, next to the chevron. Its embedded sidebar was a
+ * different one again (a "Wei OS" header, a command-jump box, renamed rows)
+ * and is not followed.
+ *
+ * Every row under Management has a real page behind it except Tenant
+ * Settings.
  */
 export type SalonNavKey =
   | "overview"
@@ -81,6 +89,7 @@ export type SalonNavKey =
   | "clients-and-profiles"
   | "lookbook-and-formulas"
   | "packages-and-prepaid"
+  | "memberships-and-loyalty"
   | "salon-stock-and-orders"
   | "stylists-and-staff"
   | "reports-and-rankings"
@@ -118,7 +127,7 @@ const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }
 
 const MANAGEMENT: { key: SalonNavKey | null; href: string; icon: string; label: string }[] = [
   { key: "packages-and-prepaid", href: "/en/salon-preview/packages", icon: "confirmation_number", label: "Packages & Prepaid" },
-  { key: null, href: "", icon: "card_membership", label: "Memberships & Loyalty" },
+  { key: "memberships-and-loyalty", href: "/en/salon-preview/memberships", icon: "loyalty", label: "Memberships" },
   { key: "salon-stock-and-orders", href: "/en/salon-preview/stock", icon: "inventory_2", label: "Salon Stock & Orders" },
   { key: "stylists-and-staff", href: "/en/salon-preview/stylists", icon: "badge", label: "Stylists & Staff" },
   { key: "reports-and-rankings", href: "/en/salon-preview/reports", icon: "leaderboard", label: "Reports & Rankings" },
