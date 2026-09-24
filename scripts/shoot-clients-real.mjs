@@ -198,6 +198,11 @@ try {
 
   let body = await ownerPage.locator("body").innerText();
 
+  // 侧栏左下角：真的登入的人，不是写死的「Wei Lin · Floor Lead & Director」。
+  await until(async () => /Owner/.test(await ownerPage.getByTestId("sidebar-who").innerText()));
+  const whoOwner = await ownerPage.getByTestId("sidebar-who").innerText();
+  check("🔴 侧栏左下角是真的登入的人（邮箱 @ 前面那段）跟真的角色（Owner），不是写死的 Wei Lin", whoOwner.includes(email.split("@")[0]) && /Owner/.test(whoOwner) && !/Wei Lin|Floor Lead|Director/.test(whoOwner), whoOwner);
+
   if (!/Datin Nora Al-Habshee|Amanda Choong|Marcus Tan|Rachel Soo/.test(body))
     ok("八个手写示范客人的名字都不见了");
   else no("还留着手写的示范客人");
@@ -465,6 +470,9 @@ try {
   await staffPage.waitForURL(/portal/, { timeout: 180000 }).catch(() => {});
   await staffPage.goto(`${BASE}/en/salon-preview/clients`, { waitUntil: "networkidle", timeout: 180000 });
   const staffBody = await staffPage.locator("body").innerText();
+  await until(async () => /Staff/.test(await staffPage.getByTestId("sidebar-who").innerText()));
+  const whoStaff = await staffPage.getByTestId("sidebar-who").innerText();
+  check("🔴 员工登入：左下角是他自己（不是老板），角色写 Staff", whoStaff.includes(staffEmail.split("@")[0]) && /Staff/.test(whoStaff) && !whoStaff.includes(email.split("@")[0]), whoStaff);
   if (/Clients-Test Nora/.test(staffBody) && !/Lifetime Spend/.test(staffBody))
     ok("🔴 员工身分看得到客人,但看不到「Lifetime Spend」这个金额格子(sees_money)");
   else no("员工身分的金钱隔离不对", staffBody.match(/Lifetime Spend[\s\S]{0,40}/)?.[0]);

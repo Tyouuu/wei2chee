@@ -1,4 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 /**
  * The founder's own Stitch-generated shell for the salon redesign (Task 405),
@@ -150,6 +154,44 @@ export function MaterialSymbolsLink() {
   );
 }
 
+/**
+ * Who is signed in, at the foot of the sidebar. It used to be the founder's own
+ * demo person ("Wei Lin, Floor Lead & Director") for every login, so a
+ * cashier saw a director's name. Now it is the real account: the name before
+ * the @ of the email (there is no display-name field anywhere in the product to
+ * read instead), and Owner or Staff from the same my_workspace() the server
+ * pages use. Until it has answered, the avatar shows a dot and the name is
+ * blank rather than briefly the wrong person.
+ */
+function SidebarWho() {
+  const [who, setWho] = useState<{ name: string; role: string } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const supabase = createBrowserSupabaseClient();
+      const { data: auth } = await supabase.auth.getUser();
+      const { data: ws } = await supabase.rpc("my_workspace");
+      const role = (ws as { role: string }[] | null)?.[0]?.role === "staff" ? "Staff" : "Owner";
+      if (!cancelled) setWho({ name: (auth.user?.email ?? "").split("@")[0], role });
+    })().catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const initials = who?.name ? who.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase() : "·";
+  return (
+    <div data-testid="sidebar-who" className="flex items-center gap-3 p-2 rounded-lg bg-[#f3f3f7]">
+      <div className="w-8 h-8 rounded-full bg-[#000000] flex items-center justify-center shrink-0">
+        <span className="text-[11.5px] leading-4 tracking-[0.04em] text-[#ffffff] font-semibold">{initials}</span>
+      </div>
+      <div className="flex flex-col min-w-0">
+        <span className="text-[13.5px] leading-5 font-semibold text-[#1a1c1f] leading-tight truncate">{who?.name ?? ""}</span>
+        <span className="text-[11.5px] leading-4 tracking-[0.04em] text-[#77767b] leading-tight">{who?.role ?? ""}</span>
+      </div>
+    </div>
+  );
+}
+
 export function SalonSidebar({
   active,
   businessName,
@@ -249,22 +291,7 @@ export function SalonSidebar({
         </div>
       </div>
       <div className="p-3 bg-[#ffffff]">
-        <div className="flex items-center justify-between p-2 rounded-lg bg-[#f3f3f7]">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#000000] flex items-center justify-center">
-              <span className="text-[11.5px] leading-4 tracking-[0.04em] text-[#ffffff] font-semibold">WL</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[13.5px] leading-5 font-semibold text-[#1a1c1f] leading-tight">Wei Lin</span>
-              <span className="text-[11.5px] leading-4 tracking-[0.04em] text-[#77767b] leading-tight">
-                Floor Lead &amp; Director
-              </span>
-            </div>
-          </div>
-          <span className="text-[#77767b] hover:text-[#1a1c1f] transition-colors p-1">
-            <span className="material-symbols-outlined text-[18px]">settings</span>
-          </span>
-        </div>
+        <SidebarWho />
       </div>
     </aside>
   );
