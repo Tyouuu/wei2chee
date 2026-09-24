@@ -11,7 +11,7 @@ import {
 import { todayMYT } from "@/lib/portal/record-validity";
 import { MaterialSymbolsLink, SalonSidebar } from "../salon-shell";
 import { StockTable, type StockRow } from "./stock-table";
-import { DraftPoPanel } from "./draft-po-panel";
+import { PurchasePanel, type LastOrder, type OpenPo, type SupplierRow } from "./purchase-panel";
 
 /* `Date.now()` directly inside a component body trips react-hooks/purity --
  * see the same note in ../overview/page.tsx. Only ever called with a fixed
@@ -43,13 +43,10 @@ function daysAgo(n: number): string {
  *   - numbered page 2/3/24 buttons -- they went nowhere in the sample and
  *     this session doesn't ship buttons that do nothing.
  *
- * NOT converted this pass, left as the founder's own local-state sample
- * (disclosed in the original file, unchanged): the "Draft PO" line-item
- * stepper and "Delivery Inbound" panel on the right. A real purchase-order
- * module exists (pipeline_records with module_key "purchases",
- * receive_purchase()) and could power this -- wiring a real "create PO"
- * write flow is a separate, larger piece than a read-only data swap and
- * would need its own pass rather than being folded into this one.
+ * The right-hand column (Task 415) is now a real purchase order and real
+ * deliveries: see purchase-panel.tsx. This page reads the suppliers, the
+ * open purchase orders with their lines and what has already arrived, and
+ * what he ordered last time (to prefill quantities and prices).
  */
 export default async function SalonStockPreview({
   params,
@@ -123,9 +120,107 @@ export default async function SalonStockPreview({
     reorderAt: r.reorder_at != null ? Number(r.reorder_at) : null,
     costCents: itemById.get(r.item_id)?.cost_cents ?? null,
     velocityOutLast30d: outByItem.get(r.item_id) ?? 0,
+    onOrder: false,
   }));
 
+  // ── purchase orders: suppliers, what is on the way, what was ordered before
+  const [{ data: supplierRows }, { data: poRows }] = await Promise.all([
+    supabase
+      .from("directory_entries")
+      .select("id, name, whatsapp")
+      .eq("project_id", projectId)
+      .eq("module_key", "suppliers")
+      .is("archived_at", null)
+      .order("name"),
+    supabase
+      .from("pipeline_records")
+      .select("id, doc_no, party, party_id, amount_cents, stage, issued_on, created_at")
+      .eq("project_id", projectId)
+      .eq("module_key", "purchases")
+      .is("archived_at", null)
+      .order("created_at", { ascending: false })
+      .limit(30),
+  ]);
+  const suppliers: SupplierRow[] = ((supplierRows ?? []) as { id: string; name: string; whatsapp: string | null }[]).map((s) => ({
+    id: s.id,
+    name: s.name,
+    whatsapp: s.whatsapp ?? "",
+  }));
+  const supplierById = new Map(suppliers.map((s) => [s.id, s]));
+  const pos = (poRows ?? []) as {
+    id: string;
+    doc_no: string;
+    party: string;
+    party_id: string | null;
+    amount_cents: number | null;
+    stage: string;
+    issued_on: string | null;
+    created_at: string;
+  }[];
+  const poIds = pos.map((p) => p.id);
+  const { data: lineRows } = poIds.length
+    ? await supabase
+        .from("record_lines")
+        .select("id, record_id, description, qty, unit, unit_price_cents, item_id, sort_order")
+        .in("record_id", poIds)
+        .order("sort_order")
+    : { data: [] };
+  type Line = { id: string; record_id: string; description: string; qty: number | null; unit: string; unit_price_cents: number | null; item_id: string | null };
+  const lines = (lineRows ?? []) as Line[];
+  const lineIds = lines.map((l) => l.id);
+  const { data: arrivedRows } = lineIds.length
+    ? await supabase.from("stock_moves").select("line_id, qty").eq("direction", "in").in("line_id", lineIds)
+    : { data: [] };
+  const arrivedByLine = new Map<string, number>();
+  for (const m of (arrivedRows ?? []) as { line_id: string; qty: number }[]) {
+    arrivedByLine.set(m.line_id, (arrivedByLine.get(m.line_id) ?? 0) + Number(m.qty));
+  }
+  const linesByPo = new Map<string, Line[]>();
+  for (const l of lines) {
+    const list = linesByPo.get(l.record_id) ?? [];
+    list.push(l);
+    linesByPo.set(l.record_id, list);
+  }
+  // Received or Paid is done; everything else is still on the way. (Both
+  // languages: the stage word follows the project's system language.)
+  const DONE = new Set(["Received", "Paid", "到货了", "付清了"]);
+  const openPos: OpenPo[] = pos
+    .filter((p) => !DONE.has((p.stage ?? "").trim()))
+    .map((p) => ({
+      id: p.id,
+      docNo: p.doc_no,
+      supplierName: p.party || (p.party_id ? supplierById.get(p.party_id)?.name ?? "" : ""),
+      whatsapp: p.party_id ? supplierById.get(p.party_id)?.whatsapp ?? "" : "",
+      issuedOn: p.issued_on ?? p.created_at.slice(0, 10),
+      totalCents: p.amount_cents != null ? Number(p.amount_cents) : null,
+      lines: (linesByPo.get(p.id) ?? []).map((l) => ({
+        id: l.id,
+        description: l.description,
+        unit: l.unit,
+        ordered: Number(l.qty ?? 0),
+        received: arrivedByLine.get(l.id) ?? 0,
+      })),
+    }));
+  const onOrderIds = new Set<string>();
+  for (const p of openPos) {
+    for (const l of linesByPo.get(p.id) ?? []) {
+      if (l.item_id && Number(l.qty ?? 0) - (arrivedByLine.get(l.id) ?? 0) > 0) onOrderIds.add(l.item_id);
+    }
+  }
+  // Most recent first, so the first time an item shows up is its latest order.
+  const lastByItem: Record<string, LastOrder> = {};
+  for (const p of pos) {
+    for (const l of linesByPo.get(p.id) ?? []) {
+      if (l.item_id && !(l.item_id in lastByItem) && Number(l.qty ?? 0) > 0) {
+        lastByItem[l.item_id] = { qty: Number(l.qty), priceCents: l.unit_price_cents != null ? Number(l.unit_price_cents) : null };
+      }
+    }
+  }
+  const tableRows: StockRow[] = rows.map((r) => ({ ...r, onOrder: onOrderIds.has(r.itemId) }));
+  const lastSupplierId = pos.find((p) => p.party_id && supplierById.has(p.party_id))?.party_id ?? null;
+
   const dayLabel = todayMYT();
+  const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date());
 
   return (
     <>
@@ -162,7 +257,7 @@ export default async function SalonStockPreview({
                   {/* LEFT: real table */}
                   <section className="xl:col-span-8 flex flex-col gap-4">
                     {rows.length ? (
-                      <StockTable rows={rows} totalCount={rows.length} />
+                      <StockTable rows={tableRows} totalCount={tableRows.length} />
                     ) : (
                       <div className="bg-[#ffffff] rounded-xl shadow-sm border border-[#c8c5cb]/30 p-10 text-center text-[13.5px] text-[#77767b]">
                         No stock items recorded for this business yet.
@@ -170,10 +265,19 @@ export default async function SalonStockPreview({
                     )}
                   </section>
 
-                  {/* RIGHT: Draft PO + Delivery -- unchanged sample content,
-                      see this file's header and draft-po-panel.tsx's own. */}
+                  {/* RIGHT: a real purchase order + what is on the way */}
                   <aside className="xl:col-span-4 flex flex-col gap-5">
-                    <DraftPoPanel />
+                    <PurchasePanel
+                      businessName={businessName}
+                      projectId={projectId}
+                      rows={tableRows}
+                      suppliers={suppliers}
+                      openPos={openPos}
+                      lastByItem={lastByItem}
+                      lastSupplierId={lastSupplierId}
+                      onOrderIds={[...onOrderIds]}
+                      today={todayStr}
+                    />
                   </aside>
                 </div>
               </div>

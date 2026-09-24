@@ -22,6 +22,8 @@ export type StockRow = {
   reorderAt: number | null;
   costCents: number | null;
   velocityOutLast30d: number;
+  /** Already on an open purchase order that has not fully arrived. */
+  onOrder: boolean;
 };
 
 function ringgit(cents: number): string {
@@ -117,11 +119,11 @@ export function StockTable({ rows, totalCount }: { rows: StockRow[]; totalCount:
                       {r.sku ?? "—"}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-semibold text-[#1a1c1f]">{r.name}</span>
                         <span
                           className={
-                            "text-[10px] uppercase font-mono px-1.5 py-0.5 rounded " +
+                            "text-[10px] uppercase font-mono px-1.5 py-0.5 rounded whitespace-nowrap " +
                             (tone === "deficit"
                               ? "bg-[#ffdad6] text-[#93000a] font-bold"
                               : tone === "low"
@@ -131,6 +133,11 @@ export function StockTable({ rows, totalCount }: { rows: StockRow[]; totalCount:
                         >
                           {tagLabel[tone]}
                         </span>
+                        {r.onOrder && (
+                          <span data-testid="on-order-tag" className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#000000] text-[#ffffff] font-semibold whitespace-nowrap">
+                            On order
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="py-3 px-4">
