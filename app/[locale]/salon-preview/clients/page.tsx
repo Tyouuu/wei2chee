@@ -308,9 +308,11 @@ export default async function SalonClientsPreview({
       // Owner only, like the lifetime spend above: it is her money.
       recentPayments: workspace.isOwner
         ? [...(paymentsByParty.get(c.id) ?? [])]
-            .sort((x, y) => y.created_at.localeCompare(x.created_at))
+            // The day the money came in (entry_on), not the day it was typed
+            // in: a payment recorded today for last Tuesday belongs to Tuesday.
+            .sort((x, y) => y.entry_on.localeCompare(x.entry_on) || y.created_at.localeCompare(x.created_at))
             .slice(0, 5)
-            .map((p) => ({ id: p.id, docNo: p.doc_no, dateLabel: dateFmt(p.created_at), method: p.method, amountCents: Number(p.amount_cents) }))
+            .map((p) => ({ id: p.id, docNo: p.doc_no, dateLabel: dateFmt(p.entry_on), method: p.method, amountCents: Number(p.amount_cents) }))
         : [],
       searchText: `${c.name} ${c.phone} ${c.whatsapp}`.toLowerCase(),
     };

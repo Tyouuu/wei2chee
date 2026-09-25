@@ -68,7 +68,12 @@ export default async function SalonInvoicesPreview({
     .eq("project_id", projectId)
     .eq("direction", "in");
   if (clientId) ledgerQuery = ledgerQuery.eq("party_id", clientId);
-  const { data: ledgerRows } = await ledgerQuery.order("created_at", { ascending: false }).limit(50);
+  // Newest by the day on the slip (entry_on), typing order only breaks ties:
+  // a payment recorded today for last Tuesday is a Tuesday invoice.
+  const { data: ledgerRows } = await ledgerQuery
+    .order("entry_on", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(50);
   const { data: clientRow } = clientId
     ? await supabase.from("directory_entries").select("id, name").eq("id", clientId).eq("project_id", projectId).maybeSingle()
     : { data: null };
