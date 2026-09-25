@@ -108,7 +108,7 @@ const pick = (arr) => arr[Math.floor(rand() * arr.length)];
 
 // ═══ 1. 旧的那个 ═══════════════════════════════════════════════════════════
 step("1", `找旧的 ${EMAIL}`);
-const { data: old } = await admin.from("accounts").select("id").eq("email", EMAIL).maybeSingle();
+const { data: old } = await admin.from("accounts").select("id, lead_id").eq("email", EMAIL).maybeSingle();
 if (old?.id) {
   const { data: oldProj } = await admin.from("projects").select("id").eq("account_id", old.id).maybeSingle();
   if (oldProj?.id) {
@@ -117,6 +117,8 @@ if (old?.id) {
     if (files?.length) await admin.storage.from("job-photos").remove(files.map((f) => `${folder}/${f.name}`));
   }
   if (!(await dropThrowaway(admin, old.id))) throw new Error("旧的帐号删不掉，停下来（不要在它上面叠一份）");
+  // 它当初挂的那一行 lead（行业）现在没有帐号指着它了，一起收掉；收不掉（别处还在用）就留着。
+  if (old.lead_id) await admin.from("leads").delete().eq("id", old.lead_id);
   console.log("   旧的已经删了（连店里的照片）");
 } else {
   console.log("   没有旧的");
@@ -124,8 +126,14 @@ if (old?.id) {
 
 // ═══ 2. 新帐号 ═════════════════════════════════════════════════════════════
 step("2", "开新帐号");
-const { error: mkErr } = await admin.auth.admin.createUser({ email: EMAIL, password: PASSWORD, email_confirm: true });
+const { data: made, error: mkErr } = await admin.auth.admin.createUser({ email: EMAIL, password: PASSWORD, email_confirm: true });
 if (mkErr) throw new Error(`createUser: ${mkErr.message}`);
+// 行业：真的沙龙客户走问卷，会有一行 lead 指着 beauty；这个帐号是我用后台建的，没走问卷，
+// 所以补上同样的一行 —— 这样它跟真的沙龙客户走同一条路（登入落在产品、平台首页有那张卡）。
+const { data: beauty } = await admin.from("industries").select("id").eq("slug", "beauty").single();
+const { data: lead, error: leadErr } = await admin.from("leads").insert({ industry_id: beauty.id, language: "en", answers: {} }).select("id").single();
+if (leadErr) throw new Error(`lead: ${leadErr.message}`);
+await must("link lead", Promise.resolve(admin.from("accounts").update({ lead_id: lead.id }).eq("id", made.user.id)));
 const { error: inErr } = await api.auth.signInWithPassword({ email: EMAIL, password: PASSWORD });
 if (inErr) throw new Error(`signIn: ${inErr.message}`);
 const { data: proj } = await api.from("projects").select("id").single();

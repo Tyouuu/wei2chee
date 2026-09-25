@@ -2,6 +2,7 @@ import { type EmailOtpType } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { type NextRequest } from "next/server";
 import { createRouteHandlerSupabaseClient } from "@/lib/supabase/route-handler-client";
+import { systemSurfaceOf } from "@/lib/portal/system-surface";
 
 /**
  * The one place a session gets established from a link.
@@ -32,7 +33,8 @@ import { createRouteHandlerSupabaseClient } from "@/lib/supabase/route-handler-c
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
-  const rawNext = searchParams.get("next") ?? "/portal";
+  const explicitNext = searchParams.get("next");
+  const rawNext = explicitNext ?? "/portal";
   const next = /^\/(?!\/)[^\s\\:]*$/.test(rawNext) ? rawNext : "/portal";
 
   const code = searchParams.get("code");
@@ -41,12 +43,22 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createRouteHandlerSupabaseClient();
 
+  /* Where a signed-in person lands when the link did not ask for somewhere
+     specific: a salon account opens the salon system (lib/portal/system-surface.ts),
+     the same rule the password login uses. A brand-new Google user has no
+     business yet, so they still land on /portal. */
+  async function landing() {
+    if (explicitNext) return next;
+    const { data: context } = await supabase.rpc("get_my_business_context");
+    return systemSurfaceOf(context) === "salon" ? "/salon-preview/overview" : next;
+  }
+
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) redirect(next);
+    if (!error) redirect(await landing());
   } else if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({ type, token_hash });
-    if (!error) redirect(next);
+    if (!error) redirect(await landing());
   }
 
   // Same destination as the signup route's failure path, so a customer who

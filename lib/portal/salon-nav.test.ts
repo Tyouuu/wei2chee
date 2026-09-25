@@ -55,6 +55,12 @@ describe("the salon sidebar reads the business's own pages", () => {
     }
   });
 
+  it("More Tools is for everybody: a cashier and a business with no pages at all still get the door", () => {
+    expect(SALON_NAV["more-tools"]).toEqual({ needs: [] });
+    expect(shown(staff(BEAUTY))).toContain("more-tools");
+    expect(shown(owner(["dashboard"]))).toContain("more-tools");
+  });
+
   it("the row you are standing on is never hidden, even when the rules would hide it", () => {
     const ctx = staff(BEAUTY);
     expect(salonRowVisible("end-of-day-cash", ctx)).toBe(false);

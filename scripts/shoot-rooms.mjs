@@ -106,7 +106,7 @@ try {
     await page.fill('input[type="email"]', email);
     await page.fill('input[type="password"]', password);
     await page.click('button[type="submit"]');
-    await page.waitForURL(/\/portal/, { timeout: 120000 });
+    await page.waitForURL(/\/(portal|salon-preview)/, { timeout: 120000 });
   };
 
   /* ── ① 改之前：一间房都没有 ──────────────────────────────────────────── */

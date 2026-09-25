@@ -145,7 +145,7 @@ try {
   await page.fill('input[type="password"]', cred.password);
   await page.click('button[type="submit"]');
   try {
-    await page.waitForURL(/portal/, { timeout: 60000 });
+    await page.waitForURL(/portal|salon-preview/, { timeout: 60000 });
   } catch {
     await page.screenshot({ path: `${OUT}/login-stuck.png`, fullPage: true });
     throw new Error(`login stopped at ${page.url()}`);

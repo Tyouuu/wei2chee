@@ -104,6 +104,7 @@ export type SalonNavKey =
   | "reports-and-rankings"
   | "end-of-day-cash"
   | "invoices-and-terminal"
+  | "more-tools"
   | "tenant-settings";
 
 export const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }[] = [
@@ -141,6 +142,9 @@ export const MANAGEMENT: { key: SalonNavKey | null; href: string; icon: string; 
   { key: "reports-and-rankings", href: "/en/salon-preview/reports", icon: "leaderboard", label: "Reports & Rankings" },
   { key: "end-of-day-cash", href: "/en/salon-preview/eod-cash", icon: "payments", label: "End of Day Cash" },
   { key: "invoices-and-terminal", href: "/en/salon-preview/invoices", icon: "receipt_long", label: "Invoices & Terminal" },
+  // The door to what only the platform's classic layout has (consent forms, treatments, reviews...)
+  // and to the platform itself. One row, so the sidebar does not grow by nine (task 421).
+  { key: "more-tools", href: "/en/salon-preview/tools", icon: "apps", label: "More Tools" },
   { key: "tenant-settings", href: "/en/salon-preview/settings", icon: "tune", label: "Tenant Settings" },
 ];
 

@@ -26,6 +26,7 @@ import {
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
+import { productHome, systemSurfaceOf } from "@/lib/portal/system-surface";
 
 /**
  * The customer's home.
@@ -212,6 +213,9 @@ export default async function PortalHomePage({
       palette={(project.palette as string | null) ?? null}
       pages={pages}
       componentCount={REGISTERED_COMPONENTS.length}
+      productHref={
+        systemSurfaceOf(businessContext) === "salon" ? productHome(locale) : null
+      }
       /**
        * THE SENTENCE FOLLOWS THE INTERFACE, and until 2026-08-25 it did not.
        *

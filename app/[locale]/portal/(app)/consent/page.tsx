@@ -86,8 +86,11 @@ export default async function ConsentPage({
             on: t("consent.on"),
             offLabel: t("consent.offLabel"),
             none: t("consent.none"),
-            signed: t("consent.signed"),
-            waiting: t("consent.waiting"),
+            // Templates with a {n} the desk fills in (consent-desk.tsx does
+            // .replace("{n}", count)). t() would try to format them here without
+            // the number and log a FORMATTING_ERROR, so they are read raw.
+            signed: t.raw("consent.signed") as string,
+            waiting: t.raw("consent.waiting") as string,
             needName: t("consent.needName"),
             needBody: t("consent.needBody"),
           }}

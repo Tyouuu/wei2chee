@@ -76,6 +76,7 @@ export function PortalHome({
   businessName,
   savedBusinessName,
   componentCount,
+  productHref = null,
 }: {
   locale: string;
   accountEmail?: string;
@@ -122,6 +123,9 @@ export function PortalHome({
    *  honest scale of what they have been handed, and the entry point to the
    *  library where they are browsed. */
   componentCount: number;
+  /** 🔴 有新界面的帐号（沙龙）：产品的正门。平台首页顶上多一张卡通往它。
+   *  没有新界面的帐号是 null，这一张卡整张不画。见 lib/portal/system-surface.ts。 */
+  productHref?: string | null;
 }) {
   const t = useTranslations("portal.home");
   const tEditor = useTranslations("portal.editor");
@@ -364,6 +368,31 @@ export function PortalHome({
               {t("statPlanNote")}
             </span>
           </div>
+        )}
+
+        {/* 平台 ↔ 产品的通道（任务 421）：这一页是建造期的地方，
+            他每天开的那一边是产品。有新界面的帐号，第一眼就看得到那一扇门。 */}
+        {productHref && (
+          <section
+            aria-label={t("productTitle")}
+            className="mt-8 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-[var(--radius-lg)] border p-5 [border-color:var(--color-ink-800)] [background-color:var(--color-ink-900)]"
+          >
+            <div className="min-w-0">
+              <h2 className="[font-size:var(--text-base)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+                {t("productTitle")}
+              </h2>
+              <p className="mt-1 max-w-2xl [font-size:var(--text-sm)] [color:var(--color-paper-dim)]">
+                {t("productBody")}
+              </p>
+            </div>
+            <Link
+              href={productHref}
+              data-testid="home-open-product"
+              className="inline-flex min-h-11 items-center rounded-[var(--radius-md)] px-4 py-2 [font-size:var(--text-sm)] [background-color:var(--color-paper)] [color:var(--color-ink-950)] [font-weight:var(--fw-semibold)] sm:min-h-0"
+            >
+              {t("productCta")} →
+            </Link>
+          </section>
         )}
 
         {/*

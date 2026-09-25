@@ -152,7 +152,7 @@ try {
     await page.fill('input[type="email"]', email);
     await page.fill('input[type="password"]', password);
     await page.click('button[type="submit"]');
-    await page.waitForURL(/\/portal/, { timeout: 120000 });
+    await page.waitForURL(/\/(portal|salon-preview)/, { timeout: 120000 });
 
     await page.goto(`${BASE}/en/portal/bookings`, { waitUntil: "domcontentloaded" });
     /* 🔴 等那几个人的名字画出来，不是数秒。

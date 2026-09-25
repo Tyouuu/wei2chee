@@ -76,6 +76,7 @@ const ROWS = {
   reports: "Reports & Rankings",
   "eod-cash": "End of Day Cash",
   invoices: "Invoices & Terminal",
+  tools: "More Tools",
   settings: "Tenant Settings",
 };
 
@@ -137,7 +138,7 @@ try {
   check("🔴 套票 · 会员是一行：有客户 ＋ 收款页就在（会员费靠收款，不靠预约）",
     first.includes("packages"), show(first));
   check("总览 · 收银 · 客户 · 作品集 · 套票会员 · 报表 · 收工 · 发票 · 设置九行都在（老板 + 有这些页）",
-    same(first, ["overview", "register", "clients", "lookbook", "packages", "reports", "eod-cash", "invoices", "settings"]), show(first));
+    same(first, ["overview", "register", "clients", "lookbook", "packages", "reports", "eod-cash", "invoices", "tools", "settings"]), show(first));
   check("🔴 侧栏上没有单独的「Memberships」「System Audit Log」两行（合并进去 / 搬进设置了）",
     (await page.locator("aside nav a[href='/en/salon-preview/audit-log']").count()) === 0
       && (await page.locator("aside nav a[href='/en/salon-preview/memberships']").count()) === 0);
@@ -161,7 +162,7 @@ try {
 
   await add("staff");
   rows = await open("overview");
-  check("🔴 加了 staff：师傅那一行出现了，十二行齐了", same(rows, Object.keys(ROWS)), show(rows));
+  check("🔴 加了 staff：师傅那一行出现了，十三行齐了", same(rows, Object.keys(ROWS)), show(rows));
   await page.screenshot({ path: `${OUT}/2-full.png` });
 
   // ═══ ③ 拿掉库存 ═══
@@ -169,7 +170,7 @@ try {
   const rm = await api.rpc("remove_project_page", { target_page_key: "inventory" });
   if (rm.error) throw new Error(`remove_project_page: ${rm.error.message}`);
   rows = await open("overview");
-  check("🔴 拿掉 inventory：库存那一行没了，别的十一行原样", !rows.includes("stock") && rows.length === 11, show(rows));
+  check("🔴 拿掉 inventory：库存那一行没了，别的十二行原样", !rows.includes("stock") && rows.length === 12, show(rows));
   await page.screenshot({ path: `${OUT}/3-no-stock.png` });
 
   // ═══ ④ 站在被拿掉的页上：那一行留着 ═══
@@ -190,13 +191,13 @@ try {
   const res = await noJsPage.goto(`${BASE}/en/salon-preview/overview`, { waitUntil: "domcontentloaded", timeout: 180000 });
   const html = await res.text();
   const ssrRows = rowsInHtml(html);
-  check("🔴 关掉 JavaScript 要一次：服务器给的 HTML 里已经是这一家的十一行（不是先画满十二行再删）",
+  check("🔴 关掉 JavaScript 要一次：服务器给的 HTML 里已经是这一家的十二行（不是先画满十三行再删）",
     same(ssrRows, Object.keys(ROWS).filter((s) => s !== "stock")), show(ssrRows));
   check("🔴 服务器给的 HTML 里，侧栏左下角已经写着 Owner",
     /Owner/.test(html.match(/<aside[\s\S]*?<\/aside>/)?.[0] ?? ""));
   await noJs.close();
 
-  // 把库存加回来，给收银员那一段用满十二行
+  // 把库存加回来，给收银员那一段用满十三行
   await add("inventory");
 
   // ═══ ⑤ 收银员 ═══
@@ -221,8 +222,8 @@ try {
   const moneyRows = ["reports", "eod-cash", "invoices", "settings"];
   check("🔴 收银员看不到通往钱跟设置的四行（报表 · 收工 · 发票 · 设置）",
     moneyRows.every((s) => !staffRows.includes(s)), show(staffRows));
-  check("一天的活都还在：总览 · 预约 · 收银 · 客户 · 作品集 · 套票会员 · 库存 · 师傅",
-    same(staffRows, ["overview", "schedule", "register", "clients", "lookbook", "packages", "stock", "stylists"]), show(staffRows));
+  check("一天的活都还在：总览 · 预约 · 收银 · 客户 · 作品集 · 套票会员 · 库存 · 师傅 · 更多工具",
+    same(staffRows, ["overview", "schedule", "register", "clients", "lookbook", "packages", "stock", "stylists", "tools"]), show(staffRows));
   const staffBody = await staffPage.locator("aside").first().innerText();
   check("左下角写的是 Staff，不是 Owner", /Staff/.test(staffBody) && !/Owner/.test(staffBody), staffBody.slice(-80));
   await staffPage.screenshot({ path: `${OUT}/4-staff.png` });

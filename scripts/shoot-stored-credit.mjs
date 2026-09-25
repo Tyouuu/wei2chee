@@ -98,7 +98,7 @@ try {
   await page.fill('input[type="email"]', EMAIL);
   await page.fill('input[type="password"]', PASSWORD);
   await page.click('button[type="submit"]');
-  await page.waitForURL(/portal/, { timeout: 60000 });
+  await page.waitForURL(/portal|salon-preview/, { timeout: 60000 });
 
   await page.goto(`${BASE}/en/portal/customers/${mrsChan.id}`, {
     waitUntil: "networkidle",

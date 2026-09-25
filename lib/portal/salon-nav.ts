@@ -59,6 +59,9 @@ export const SALON_NAV: Record<string, SalonNavRule> = {
   "reports-and-rankings": { needs: ["payments"], ownerOnly: true },
   "end-of-day-cash": { needs: ["payments"], ownerOnly: true },
   "invoices-and-terminal": { needs: ["payments"], ownerOnly: true },
+  // The door to the tools that live in the platform's classic layout and to the platform
+  // itself. Every business has it; each tool inside decides for itself (tools/page.tsx).
+  "more-tools": { needs: [] },
   // The owner's own settings: who works here, the rules, the pages kept. No
   // page of the business is needed for it, and a cashier has no business there.
   "tenant-settings": { needs: [], ownerOnly: true },

@@ -109,7 +109,7 @@ async function login(page, email, password) {
     await page.fill("input[type=password]", password);
     await page.click("button[type=submit]");
     const landed = await page
-      .waitForURL(/\/portal/, { timeout: 90000 })
+      .waitForURL(/\/(portal|salon-preview)/, { timeout: 90000 })
       .then(() => true, () => false);
     if (landed) return;
     /* 🔴 画面上真的有一句错误讯息 = 产品的事，不要重试掩盖它。 */
@@ -424,6 +424,21 @@ try {
     quality: 82,
     fullPage: true,
   });
+
+  // 同意书清单那一页：签了一份之后，那一行要写「1 signed」。
+  // 🔴 这句字是带 {n} 的模板，页面把它原样交给画面去填数字；如果页面用 t() 去格式化它，
+  // 会因为没给 n 而报 FORMATTING_ERROR，那一行就会印一串键名。（2026-09-25 在开发模式的
+  // 控制台看到，「2 Issues」）
+  await boss.goto(`${BASE}/en/portal/consent`, { waitUntil: "domcontentloaded", timeout: 120000 });
+  await boss.waitForSelector("text=Botox consent", { timeout: 90000 });
+  const consentList = await boss.evaluate(() => document.body.innerText);
+  check("🔴 同意书清单：签了一份的那一行写着「1 signed」，不是一串键名",
+    /1 signed/.test(consentList) && !/portal\.consent|consent\.signed/.test(consentList), consentList.slice(0, 300));
+  // 回到客户页，下一段（⑥）要在那里发第二条连结。
+  await boss.goto(`${BASE}/en/portal/customers/${CLIENT}`, { waitUntil: "domcontentloaded", timeout: 120000 });
+  await boss.waitForSelector('[role="tab"]:has-text("Account & activity")', { timeout: 90000 });
+  await boss.click('[role="tab"]:has-text("Account & activity")');
+  await boss.addStyleTag({ content: "nextjs-portal{display:none!important}" });
 
   /* ── ⑥ 收回一条还没签的 ─────────────────────────────────────────────── */
   console.log("\n⑥ 收回一条还没签的");

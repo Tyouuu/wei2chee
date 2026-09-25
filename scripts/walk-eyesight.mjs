@@ -474,10 +474,10 @@ try {
   await page.fill('input[type="email"]', EMAIL);
   await page.fill('input[type="password"]', PASSWORD);
   await page.click('button[type="submit"]');
-  await page.waitForURL(/portal/, { timeout: 300000 }).catch(() => {});
+  await page.waitForURL(/portal|salon-preview/, { timeout: 300000 }).catch(() => {});
   await page.waitForTimeout(2500);
   await page.addStyleTag({ content: "nextjs-portal{display:none!important}" }).catch(() => {});
-  if (!page.url().includes("/portal")) {
+  if (!/\/(portal|salon-preview)/.test(page.url())) {
     await shot(page, "0-stuck-on-login");
     /* 🔴 登不进去有三种，而它们在画面上长得一模一样。分开讲，不然下一个人
        会去查一个不存在的产品 bug（任务 257 付过这一次学费）。 */

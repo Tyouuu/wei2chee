@@ -136,7 +136,7 @@ try {
     await desk.fill('input[type="email"]', site.email);
     await desk.fill('input[type="password"]', site.password);
     await desk.click('button[type="submit"]');
-    await desk.waitForURL(/portal/, { timeout: 180000 });
+    await desk.waitForURL(/portal|salon-preview/, { timeout: 180000 });
     await desk.goto(`${BASE}/en/portal/website?design=1`, { waitUntil: "networkidle", timeout: 180000 });
     await desk.waitForTimeout(3000);
     const more = desk.locator("summary", { hasText: /^More/ }).first();

@@ -108,7 +108,7 @@ try {
   await page.fill('input[type="email"]', EMAIL);
   await page.fill('input[type="password"]', PASSWORD);
   await page.click('button[type="submit"]');
-  await page.waitForURL(/portal/, { timeout: 180000 });
+  await page.waitForURL(/portal|salon-preview/, { timeout: 180000 });
 
   const hide = "nextjs-portal, #__next-build-watcher, [data-nextjs-toast] { display: none !important; }";
   for (const [w, h, tag] of WIDTHS) {

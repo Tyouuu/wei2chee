@@ -198,7 +198,7 @@ try {
   await page.fill('input[type="email"]', EMAIL);
   await page.fill('input[type="password"]', PASSWORD);
   await page.click('button[type="submit"]');
-  await page.waitForURL(/portal/, { timeout: 180000 });
+  await page.waitForURL(/portal|salon-preview/, { timeout: 180000 });
 
   /* 引导卡关掉、dev 红点藏掉 —— 两样客户看不到，图上也不该有。
      ⚠️ 不用先按一次保存：`front-door.ts` 2026-09-07 之后一进来就是他的系统。 */

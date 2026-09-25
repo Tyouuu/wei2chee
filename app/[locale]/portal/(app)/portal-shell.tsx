@@ -8,6 +8,7 @@ import { SettingsDialog } from "../settings-dialog";
 import type { SystemLang } from "@/lib/system-lang";
 import { AddPageDialog } from "../add-page-dialog";
 import { CommandBar, FindButton } from "./command-bar";
+import { productHome, productPathFor } from "@/lib/portal/system-surface";
 import chrome from "../chrome.module.css";
 import {
   IconHome,
@@ -258,6 +259,7 @@ export function PortalShell({
   hasBookings,
   paid,
   isOwner,
+  productSurface = false,
 }: {
   children: ReactNode;
   locale: string;
@@ -320,6 +322,11 @@ export function PortalShell({
       (`sees_money()`) and each route's own refusal, because a rail is a
       suggestion and a URL is typeable. */
   isOwner: boolean;
+  /** 🔴 这个帐号每天用的是产品那套新界面（沙龙，见 lib/portal/system-surface.ts）。
+   *  是的话：侧栏顶上多一行「打开你的系统」，而「客户 · 预约 · 收款 …」这几行
+   *  点了直接去新版，不再落在旧样子的同一页。平台（这条侧栏）仍然在，
+   *  它是建造期的地方；产品才是每天开的那一边。 */
+  productSurface?: boolean;
 }) {
   const t = useTranslations("portal.shell");
 
@@ -587,6 +594,11 @@ export function PortalShell({
 
         <nav className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
           <div className="pt-3">
+            {productSurface && (
+              <NavRow href={productHome(locale)} active={false} icon={<IconPages />}>
+                {t("openProduct")}
+              </NavRow>
+            )}
             <NavRow href={base} active={is("")} icon={<IconHome />}>
               {t("home")}
             </NavRow>
@@ -620,7 +632,10 @@ export function PortalShell({
           {systemPages.map((page) => (
             <Fragment key={page.key}>
               <NavRow
-                href={`${base}/${page.key}`}
+                href={
+                  (productSurface ? productPathFor(locale, page.key) : null) ??
+                  `${base}/${page.key}`
+                }
                 active={is(`/${page.key}`)}
                 icon={<IconPages />}
                 trailing={

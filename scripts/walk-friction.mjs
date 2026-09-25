@@ -289,10 +289,10 @@ try {
   await page.fill('input[type="email"]', EMAIL);
   await page.fill('input[type="password"]', PASSWORD);
   await page.click('button[type="submit"]');
-  await page.waitForURL(/portal/, { timeout: 300000 }).catch(() => {});
+  await page.waitForURL(/portal|salon-preview/, { timeout: 300000 }).catch(() => {});
   await page.waitForTimeout(2500);
   await page.addStyleTag({ content: "nextjs-portal{display:none!important}" }).catch(() => {});
-  if (!page.url().includes("/portal")) {
+  if (!/\/(portal|salon-preview)/.test(page.url())) {
     /* 🔴 登不进去要讲得出为什么 —— 一个只讲「登不进去」的尺，
        跟一个坏掉的登入页在报告里长得一模一样。拍一张，把画面上的字印出来。 */
     await shot(page, "0-stuck-on-login");

@@ -15,6 +15,7 @@ import {
   tradeLabels,
   type BusinessContext,
 } from "@/lib/templates/industry-template";
+import { systemSurfaceOf } from "@/lib/portal/system-surface";
 
 /**
  * The shell every application screen sits inside.
@@ -294,6 +295,7 @@ export default async function PortalAppLayout({
       twoShops={(shopRows ?? []).length >= 2}
       hasBookings={pageRefs.some((r) => r.key === "bookings")}
       paid={Boolean(project?.paid)}
+      productSurface={systemSurfaceOf(businessContext) === "salon"}
     >
       {/* Inside the shell, not around it. PortalShell is FORMAE -- dark chrome,
           the founder's own product, always in the owner's language. Everything

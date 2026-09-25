@@ -697,6 +697,9 @@
       "siteEnquiries": "收到 {n} 条询价",
       "siteEnquiriesNone": "还没有询价进来",
       "siteEnquiriesLink": "去看",
+      "productTitle": "你的系统可以用了",
+      "productBody": "预约、客户、收银、库存、报表：你每天打开的那一边。这一页是你调整它、交给我们改的地方。",
+      "productCta": "打开你的系统",
       "deliveryTitle": "你的系统在哪一步",
       "deliverySince": "停在这一步：{date} 起",
       "deliveryStage": {
@@ -760,6 +763,7 @@
       "navLabel": "主导航",
       "home": "首页",
       "systemSection": "我的系统",
+      "openProduct": "打开你的系统",
       "publicSection": "给客人看的官网",
       "siteLive": "已上线",
       "siteDraft": "还没上线",

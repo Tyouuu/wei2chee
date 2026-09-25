@@ -697,6 +697,9 @@
       "siteEnquiries": "{n, plural, one {# enquiry so far} other {# enquiries so far}}",
       "siteEnquiriesNone": "No enquiries yet",
       "siteEnquiriesLink": "Open",
+      "productTitle": "Your system is ready to use",
+      "productBody": "Appointments, clients, the register, stock and reports: the part you open every day. This page is where you shape it and hand changes to us.",
+      "productCta": "Open your system",
       "deliveryTitle": "Where your system is",
       "deliverySince": "In this step since {date}",
       "deliveryStage": {
@@ -760,6 +763,7 @@
       "navLabel": "Main navigation",
       "home": "Home",
       "systemSection": "My system",
+      "openProduct": "Open your system",
       "publicSection": "Public site",
       "siteLive": "Live",
       "siteDraft": "Not published",
