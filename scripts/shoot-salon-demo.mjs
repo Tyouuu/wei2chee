@@ -40,8 +40,10 @@ let bad = 0;
 for (const p of PAGES) {
   errors.length = 0;
   const t0 = Date.now();
-  const res = await page.goto(`${BASE}/en/salon-preview/${p}`, { waitUntil: "networkidle", timeout: 120000 }).catch((e) => ({ status: () => `ERR ${e.message}` }));
-  await page.waitForTimeout(600);
+  // 用 load、不用 networkidle：Next 会在后台预载侧栏上的别的页，networkidle 会一直等它们
+  // （收银台因此显示 38 秒，量出来真的打开只要 3.4 秒）。
+  const res = await page.goto(`${BASE}/en/salon-preview/${p}`, { waitUntil: "load", timeout: 120000 }).catch((e) => ({ status: () => `ERR ${e.message}` }));
+  await page.waitForTimeout(1500);
   const body = await page.locator("body").innerText().catch(() => "");
   const h1 = await page.locator("h1").first().innerText().catch(() => "(没有 h1)");
   const rows = await page.locator("aside nav a").count();

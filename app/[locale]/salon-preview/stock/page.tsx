@@ -69,10 +69,14 @@ export default async function SalonStockPreview({
   );
 
   const [{ data: stockRows }, { data: itemRows }] = await Promise.all([
+    // A priced service ("Precision Cut", unit "service") lives in the same
+    // catalog so the Register can ring it up, but it has no shelf and no count:
+    // listing it here would show "0 service" rows among the tubes and bottles.
     supabase
       .from("stock_on_hand")
       .select("item_id, name, unit, location, reorder_at, on_hand")
       .eq("project_id", projectId)
+      .neq("unit", "service")
       .order("name"),
     supabase
       .from("catalog_items")
