@@ -8,7 +8,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { AuthField, authSubmitClass } from "@/components/auth-field";
 import { AuthDivider, GoogleButton } from "@/components/oauth-buttons";
 
-export function LoginForm({ locale }: { locale: string }) {
+export function LoginForm({ locale, next = null }: { locale: string; next?: string | null }) {
   const t = useTranslations("auth");
   const router = useRouter();
 
@@ -71,7 +71,9 @@ export function LoginForm({ locale }: { locale: string }) {
        登入成功之后这个组件本来就会被换掉，所以「一直转到画面换掉为止」
        才是对的。⚠️ 代价写出来：万一那一跳没走成，那颗按钮会一直是灰的 ——
        而那比上面那一串好，因为它不会把他送去重设一个没有坏的密码。 */
-    router.push(founder ? "/console" : "/portal");
+    // `next` was already checked to be a path on this site (lib/auth/safe-next.ts).
+    // The founder's console is never redirected by a link.
+    router.push(founder ? "/console" : (next ?? "/portal"));
   }
 
   return (
