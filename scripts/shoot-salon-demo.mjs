@@ -40,12 +40,13 @@ let bad = 0;
 for (const p of PAGES) {
   errors.length = 0;
   const t0 = Date.now();
-  // 用 load、不用 networkidle：Next 会在后台预载侧栏上的别的页，networkidle 会一直等它们
-  // （收银台因此显示 38 秒，量出来真的打开只要 3.4 秒）。
+  // 收银台没有 h1（它是一台收银机，不是一页文章）。下面读 h1 时 Playwright 会为一个
+  // 不存在的元素等满 30 秒，收银台因此显示 35 秒 —— 真的打开只要 3 秒左右（各种顺序都量过）。
+  // 所以读 h1 一律给一个短的 timeout。
   const res = await page.goto(`${BASE}/en/salon-preview/${p}`, { waitUntil: "load", timeout: 120000 }).catch((e) => ({ status: () => `ERR ${e.message}` }));
   await page.waitForTimeout(1500);
   const body = await page.locator("body").innerText().catch(() => "");
-  const h1 = await page.locator("h1").first().innerText().catch(() => "(没有 h1)");
+  const h1 = await page.locator("h1").first().innerText({ timeout: 1500 }).catch(() => "(没有 h1)");
   const rows = await page.locator("aside nav a").count();
   const broken = /Application error|Something went wrong|This page could not be found|Unhandled Runtime Error/i.test(body);
   const login = /\/login/.test(page.url());
