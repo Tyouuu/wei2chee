@@ -145,10 +145,17 @@ try {
   check("🔴 沙龙帐号：旧侧栏里的总览 · 客户 · 收款三行点了去新版（overview · clients · invoices），一行都不是旧地址",
     ["/en/salon-preview/overview", "/en/salon-preview/clients", "/en/salon-preview/invoices"].every((h) => sHrefs.includes(h))
       && !["/en/portal/dashboard", "/en/portal/customers", "/en/portal/payments"].some((h) => sHrefs.includes(h)), sHrefs.join(" "));
+  // 新版是唯一的 UI 版本（任务 424）：沙龙的旧侧栏不列报价单 · 工程（沙龙的页里本来没有），也没有「加一页」
+  check("🔴 沙龙帐号：旧侧栏不列「报价单」「工程」（这个帐号是按通用页开出来的，带着它们）",
+    !sHrefs.some((h) => /\/portal\/(quotations|projects)$/.test(h ?? "")), sHrefs.join(" "));
+  check("🔴 沙龙帐号：旧侧栏没有「+」加一页（那个菜单给的是旧模块库）", (await s.page.locator("aside button[aria-label='+ Add a page']").count()) === 0);
   await s.page.screenshot({ path: `${OUT}/3-old-shell-salon.png` });
   await o.page.goto(`${BASE}/en/portal/today`, { waitUntil: "load", timeout: 180000 });
   await o.page.waitForTimeout(1500);
   const oHrefs = await railHrefs(o.page);
+  check("🔴 没有行业的帐号：旧侧栏照旧列「报价单」「工程」，也照旧有「+」加一页（别的行业一个字不动）",
+    oHrefs.some((h) => h?.endsWith("/portal/quotations")) && oHrefs.some((h) => h?.endsWith("/portal/projects"))
+      && (await o.page.locator("aside button[aria-label='+ Add a page']").count()) === 1, oHrefs.join(" "));
   check("🔴 没有行业的帐号：旧侧栏没有「Open your system」，客户那一行照旧去 /en/portal/customers，没有一行被改去新版",
     (await o.page.locator("aside a", { hasText: "Open your system" }).count()) === 0
       && oHrefs.includes("/en/portal/customers") && !oHrefs.some((h) => h?.includes("/salon-preview/")), oHrefs.join(" "));
@@ -187,10 +194,34 @@ try {
   await s.page.locator("aside a", { hasText: "Open your system" }).first().click();
   await s.page.waitForURL(/salon-preview\/overview/, { timeout: 120000 });
   check("🔴 点那一行「Open your system」：回到产品总览", /salon-preview\/overview$/.test(path(s.page)), path(s.page));
+  // 旧侧栏里「班级」是补习中心的页，沙龙（加了预约页之后）也不该出现 —— 把每一组都展开再量
+  // 一次只展开一组（openTools 是单值），所以一组一组展开、每展开一组就收一次连结，最后合起来看
+  await s.page.goto(`${BASE}/en/portal/consent`, { waitUntil: "load", timeout: 180000 });
+  await s.page.locator("aside nav a", { hasText: "Home" }).first().waitFor({ timeout: 60000 }).catch(() => {});
+  const groupBtns = s.page.locator("aside nav button[aria-expanded]");
+  const openedHrefs = new Set(await railHrefs(s.page));
+  for (let i = 0; i < (await groupBtns.count()); i++) {
+    const b = groupBtns.nth(i);
+    if ((await b.getAttribute("aria-expanded")) === "false") await b.click().catch(() => {});
+    await s.page.waitForTimeout(150);
+    for (const h of await railHrefs(s.page)) openedHrefs.add(h);
+  }
+  check("🔴 沙龙帐号（有预约页）：旧侧栏一组一组展开之后，没有「班级」（补习的页）；而「谁欠钱」这类沙龙的工具是有的（证明真的展开过）",
+    ![...openedHrefs].some((h) => h?.endsWith("/portal/classes")) && [...openedHrefs].some((h) => h?.endsWith("/portal/owing")), [...openedHrefs].join(" "));
+  await s.page.goto(`${BASE}/en/salon-preview/tools`, { waitUntil: "load", timeout: 180000 });
   await s.page.goto(`${BASE}/en/salon-preview/tools`, { waitUntil: "load" });
   await s.page.getByTestId("tool-platform").click();
-  await s.page.waitForURL(/\/en\/portal$/, { timeout: 120000 });
-  check("「Formae platform」那张卡：进平台首页", /\/en\/portal$/.test(path(s.page)), path(s.page));
+  await s.page.waitForURL(/salon-preview\/setup/, { timeout: 120000 });
+  check("「Setup & delivery」那张卡：进新版的 Setup & Delivery 页（不是旧的深色平台首页）", /salon-preview\/setup$/.test(path(s.page)), path(s.page));
+  await s.page.getByTestId("home-open-product").waitFor({ timeout: 30000 }).catch(() => {});
+  check("🔴 那一页：五步交付条 ＋ 进系统的入口；没有旧页面缩略图 · 「Open and edit」 · 「Add a page」",
+    (await s.page.getByTestId("setup-stages").locator("li").count()) === 5
+      && (await s.page.getByTestId("home-open-product").count()) === 1
+      && (await s.page.getByText(/Open and edit|Generated draft|Add a page/).count()) === 0);
+  await s.page.screenshot({ path: `${OUT}/6b-setup-page.png` });
+  await s.page.goto(`${BASE}/en/portal`, { waitUntil: "load", timeout: 180000 });
+  await s.page.waitForURL(/salon-preview\/setup/, { timeout: 60000 }).catch(() => {});
+  check("🔴 沙龙帐号直接打开平台首页 /en/portal：转到新版的 Setup & Delivery，不再是旧的深色首页", /salon-preview\/setup$/.test(path(s.page)), path(s.page));
   await s.ctx.close();
 
   // ═══ ⑦ 师傅 ═══

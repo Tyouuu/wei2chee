@@ -143,6 +143,10 @@ await must("identity", api.rpc("update_business_identity", { new_business_name: 
 for (const k of ["customers", "staff", "bookings", "payments", "inventory", "expenses"]) {
   await api.rpc("add_project_page", { requested_key: k, new_title: "" });
 }
+// 示范帐号是按通用页开出来的（还没有行业），带着报价单 / 工程 —— 沙龙的默认页里本来没有（任务 423）。
+for (const k of ["quotations", "projects", "orders"]) {
+  await api.rpc("remove_project_page", { target_page_key: k });
+}
 console.log(`   project ${pid}`);
 
 // ═══ 3. 师傅 ═══════════════════════════════════════════════════════════════

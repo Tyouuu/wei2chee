@@ -116,6 +116,13 @@ export default async function PortalHomePage({
   // and nothing here can reach another customer's lead.
   const { data: context } = await supabase.rpc("get_my_business_context");
   const businessContext = (context as BusinessContext | null) ?? {};
+  /* 🔴 沙龙帐号的平台首页是新设计（任务 425）。老板：`平台方还是用着旧版的设计`。
+     旧的首页画的是旧页面的缩略图 ＋ 旧模块库，对沙龙不成立了 —— 直接转到新版的
+     Setup & Delivery（交付到哪一步 ＋ 进系统的入口 ＋ 官网 / 需求书）。
+     别的行业一个字不动。 */
+  if (systemSurfaceOf(businessContext) === "salon") {
+    redirect(`/${locale}/salon-preview/setup`);
+  }
   // The account chip answers "who am I signed in as", so it wants the person's
   // name. Until they set one in settings, the email's local part is the least
   // bad stand-in -- better than the full address, which would put a customer's

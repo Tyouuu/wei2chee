@@ -122,9 +122,9 @@ export default async function SalonToolsPage({ params }: { params: Promise<{ loc
           href: `${P}/website`, show: hasWebsite && isOwner,
         },
         {
-          key: "platform", icon: "dashboard_customize", title: "Formae platform",
-          body: "Where your system is in the build, the pages behind it, and where to hand changes to us.",
-          href: P, show: isOwner,
+          key: "platform", icon: "dashboard_customize", title: "Setup & delivery",
+          body: "Where your system is in the build, your website and your specification.",
+          href: "/en/salon-preview/setup", show: isOwner,
         },
       ],
     },

@@ -337,7 +337,14 @@ export function PortalShell({
     anything (「我的网站」, "Shopfront") without changing what it is.
   */
   const sitePage = pages.find((p) => p.key === "website") ?? null;
-  const systemPages = pages.filter((p) => p.key !== "website");
+  /* 🔴 沙龙帐号（productSurface）的旧侧栏不列「不是沙龙的页」（任务 423/424）：
+     报价单 · 工程 · 订单 是装修 / 批发的页，沙龙的默认页里本来就没有，
+     示范帐号是先按通用页开出来再补的，才会带着它们。 */
+  const systemPages = pages.filter(
+    (p) =>
+      p.key !== "website" &&
+      !(productSurface && ["quotations", "projects", "orders"].includes(p.key)),
+  );
 
   /**
    * 🔴 每一件工具属於哪一页。
@@ -483,7 +490,9 @@ export function PortalShell({
     {
       key: "classes",
       under: "bookings",
-      show: isOwner && hasBookings,
+      /* 班级是补习中心的页。沙龙帐号（productSurface）不出现 —— 它本来只判
+         「老板 ＋ 有预约页」，没看行业（任务 423：沙龙只看沙龙需要的）。 */
+      show: isOwner && hasBookings && !productSurface,
       icon: <IconClass />,
     },
   ];
@@ -614,7 +623,9 @@ export function PortalShell({
                  for the owner. A 「+」 that raises 「payment required」 or
                  nothing at all is the control this whole change exists to
                  stop drawing. */
-              !isOwner ? null : (
+              /* 沙龙帐号没有「加一页」：那个菜单给的是旧模块库（订单 · 采购单 ·
+                 报价单 …），新版是固定的十四页，要开关哪几页在租户设置里。 */
+              !isOwner || productSurface ? null : (
                 <button
                   type="button"
                   onClick={() => setAddPageOpen(true)}
