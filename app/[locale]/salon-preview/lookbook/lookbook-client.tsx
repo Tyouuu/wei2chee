@@ -116,6 +116,9 @@ export function LookbookClient({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [captions, setCaptions] = useState<Record<string, string>>({});
+  const [captioningId, setCaptioningId] = useState<string | null>(null);
+  const [captionCopiedId, setCaptionCopiedId] = useState<string | null>(null);
   const [appliedId, setAppliedId] = useState<string | null>(null);
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [applyTargetId, setApplyTargetId] = useState(customers[0]?.id ?? "");
@@ -199,6 +202,46 @@ export function LookbookClient({
       setTimeout(() => setAppliedId((r) => (r === look.id ? null : r)), 1500);
     } finally {
       setApplyingId(null);
+    }
+  };
+
+  /**
+   * GlossGenius's 2026-07 "Genius AI" rebrand made this its headline: a
+   * salon's own before/after work, turned into a post it can put up today.
+   * The formula never leaves this component -- `/api/portal/caption` isn't
+   * even sent it -- because it's the salon's own trade secret, not something
+   * to hand a stranger reading Instagram.
+   */
+  const generateCaption = async (look: LookCard) => {
+    setCaptioningId(look.id);
+    try {
+      const res = await fetch("/api/portal/caption", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lookId: look.id }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) {
+        setFlash({ ok: false, text: "Couldn't write a caption for this one -- try again in a moment." });
+        return;
+      }
+      setCaptions((c) => ({ ...c, [look.id]: data.text }));
+    } catch {
+      setFlash({ ok: false, text: "Couldn't reach the caption writer -- check your connection." });
+    } finally {
+      setCaptioningId(null);
+    }
+  };
+
+  const copyCaption = async (look: LookCard) => {
+    const text = captions[look.id];
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCaptionCopiedId(look.id);
+      setTimeout(() => setCaptionCopiedId((r) => (r === look.id ? null : r)), 1500);
+    } catch {
+      setFlash({ ok: false, text: "Couldn't copy: your browser blocked clipboard access." });
     }
   };
 
@@ -533,6 +576,44 @@ export function LookbookClient({
                         </button>
                       </div>
                     ) : null}
+                    {!look.example && (
+                      <div className="pt-2">
+                        {captions[look.id] ? (
+                          <div className="bg-[#f3f3f7] p-2.5 rounded-lg">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase tracking-wider text-[#5e5e67] flex items-center gap-1">
+                                <span className="material-symbols-outlined text-[13px]">edit_note</span> Post Caption
+                              </span>
+                              <button
+                                onClick={() => copyCaption(look)}
+                                className="text-[#5e5e67] hover:text-[#1a1c1f] active:scale-[0.97] text-[11px] flex items-center gap-0.5"
+                                title="Copy to clipboard"
+                              >
+                                <span className="material-symbols-outlined text-[13px]">{captionCopiedId === look.id ? "check" : "content_copy"}</span>
+                                {captionCopiedId === look.id ? "Copied" : "Copy"}
+                              </button>
+                            </div>
+                            <p className="text-[12.5px] text-[#1a1c1f] leading-relaxed whitespace-pre-wrap">{captions[look.id]}</p>
+                            <button
+                              onClick={() => generateCaption(look)}
+                              disabled={captioningId === look.id}
+                              className="mt-2 text-[11px] text-[#5e5e67] hover:text-[#1a1c1f] disabled:opacity-50"
+                            >
+                              {captioningId === look.id ? "Rewriting…" : "Rewrite"}
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => generateCaption(look)}
+                            disabled={captioningId === look.id}
+                            className="w-full h-8 rounded bg-[#eeedf1] text-[#1a1c1f] hover:bg-[#e8e8ec] active:scale-[0.97] transition-colors text-[13.5px] leading-5 font-medium flex items-center justify-center gap-1 disabled:opacity-60"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">edit_note</span>
+                            {captioningId === look.id ? "Writing…" : "Turn into a Caption"}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
