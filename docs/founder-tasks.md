@@ -5413,7 +5413,14 @@ Sources:
 
 **真正决定性的那一层还没到**：[重点 9c] 那张护城河表讲得很清楚——**钱经过我们**（收款闸道）才是拔不走的那一根，卡在他自己在办的公司注册。接名字回来是「抄不走」，接了收款闸道才是「离开会痛」。在闸道通之前，第二根是客人自己手上那条连结（[任务 368]/[任务 371] 预约取消 · 留评价，已经建好），但还没有自动发送，同样卡在 WhatsApp 真号码（[任务 11]）。
 
-- [ ] 🔴 新版 13 页标题读 `project_pages.title`（照旧版 `pageLabel`/`tradeLabels` 那一套），等他点头
+- [x] ✅ 新版侧栏读 `project_pages.title` 了（2026-09-26 他点头做）——`salon-preview/layout.tsx`
+      多带 title，`salon-shell.tsx` 新的 `rowLabel()` 按 `SALON_NAV[key].needs[0]` 找对应的
+      page_key 去查有没有改过名。只做**侧栏**（他批准的范围），没有动每一页自己的 `<h1>`。
+      真登入验证（`shoot-salon-rename.mjs`）：改 customers → "Members"、bookings → "预约"
+      （中文接得住），侧栏跟着变；没改过的 Overview 照旧默认字。故意让它永远回默认字看过
+      三条红，改回去再确认全绿；`shoot-salon-nav-real` 20 条无回归，tsc 干净。
+      ⚠️ Packages & Plans / More Tools / Tenant Settings 三行没有单一对应的 page_key，
+      照旧显示固定字——跟旧版 `pageLabel()` 同一条退路规矩，不是漏做
 - [ ] 收款闸道、WhatsApp 真号码——他自己在办的事，不是代码能解的
 
 #### 他追问：`帮我去参考一些最近很爆火的SAAS 我能不能作为参考`——查了三家真的，两家能用一家不能用
