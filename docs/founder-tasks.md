@@ -5384,6 +5384,22 @@ Discard · 收据预览跟着店名 · 分店加 / 同名不多开 / 关 / 开�
 **量出来的一个我上一版漏掉的**：新版能调用的功能里，**「新增」类的缺了六个** —— 新增师傅 · 新增服务 / 产品（价目表）· 卖一张套票 · 记一笔开销 · 冲正 · 改预约时间（用 `grep rpc(` 数新版实际调用的函式量出来的，不是凭印象）。上一版我只对了「旧版有哪些页」。所以第一版 = **1 个新页（开销）＋ 6 个新增面板 ＋ 4 个小块 ＋ 2 处分页**，我这边再做「收银自动记做了什么」。
 - [ ] 他点头 → 这就是最终的第一版
 
+#### 他问：`还有什么别的技术是也可以放在我们的产品里面的`——查了三件真的，一件新、一件确认、一件加重
+| 查到的 | 真的数字 | 落点 |
+|---|---|---|
+| 🔴 **GlossGenius 2026-07 改名 Genius AI，融了 $44M，估值 $1.15B**，转型做「AI 自动跑完整个生意」——列的自动化项目里明写**营销**，而且正往 medi spa 那一类（他们自己叫「health-adjacent」）扩 | 他们**同一个赛道**（美容），125,000 家客户 · 逼近 $200M 年营收 | ✅ **新的一件**：Lookbook 里那些作品（照片 ＋ 配方）今天只放在店里给客人看，一个字没变成她能发的东西。让 AI 助手把一份作品变成一句能直接发 Instagram 的文案——美容业老板每天在做的事，而且素材已经在库里，不用新建资料 |
+| Malaysia **81–90% 成年人用电子钱包**，POS 现金占比从 2019 年 64% 掉到 2025 年 22%，2026 年 DuitNow QR 一年 30 亿笔 | 一年查一次的市场数字 | 🟢 **不用新做**：确认收银台已经接的 DuitNow QR 是对的选择——它是通用扫码，Touch 'n Go / GrabPay / 银行 App 都能扫同一个码 |
+| 🔴 **双向 WhatsApp「回覆确认／取消」把爽约再降 8–12%**（比单向提醒多降的部分；单向提醒本身平均降 29–39%），Mayo Clinic 一间诊所两天前发一次提醒降了近 50% | 29 份研究的系统性回顾 · 真实诊所数字 | ⚠️ **不是新点子，是给已经卡住的[任务 316]「收 WhatsApp 进来那一支」补一个数字**：这不只是锦上添花，是有真的百分比支撑的功能，而它正好卡在昨天讲的号码架构上——号码接上之后，这一支排的优先级该往前提 |
+
+Sources:
+- [Exclusive: Twin sisters built GlossGenius into the latest female-founded unicorn — Fortune](https://fortune.com/2026/07/21/glossgenius-rebrand-genius-ai-small-businesses-beauty-unicorn-series-d/)
+- [Digital Wallets in Malaysia: Ecosystems & Trends (2026) — Curlec](https://curlec.com/blog/guides/malaysia-digital-wallet-guide-2026/)
+- [Pragmatic Randomized Study of Targeted Text Message Reminders to Reduce Missed Clinic Visits — The Permanente Journal](https://www.thepermanentejournal.org/doi/10.7812/TPP/21.078)
+- [How to Reduce No-Shows: 15 Strategies — Appointment Reminder](https://appointmentreminder.com/guides/reduce-no-shows/)
+
+- [ ] Lookbook 作品一键变社群文案——等他点头
+- [ ] 双向 WhatsApp 确认／取消——等号码架构定案（[任务 176]/[任务 406]），再回来提优先级
+
 ### 426. 🔴 「没有让沙龙老板一定会选择我的特点」——查出一个真退步：新版侧栏的字全部写死了（2026-09-26 他问的）
 > `我做了这个system出来 没有什么特点你知道 就是没有让saloon老板 一定会选择我的特点 你知道吗`
 
