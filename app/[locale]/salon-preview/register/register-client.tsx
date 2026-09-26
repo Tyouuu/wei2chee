@@ -74,6 +74,59 @@ function saveParked(list: ParkedTicket[]) {
     // survive a reload there, which is the same honest limit as always.
   }
 }
+/**
+ * A checkout is not always "what was done" -- Register sells retail goods too,
+ * and most tickets have no client attached at all. This only ever fires the
+ * ONE unambiguous case: a real client is attached, and she has exactly one
+ * booked (not yet done/cancelled/no-show) appointment today. Anything less
+ * certain -- no client, no appointment, or more than one today -- is left
+ * alone rather than guessed at (任务 89's line: saving him a keystroke is
+ * never a reason to guess).
+ *
+ * Every service-shaped cart line (unit === "service") becomes its own
+ * `add_visit_line` row on that appointment, walking the existing write path
+ * ([重点23] -- the same RPC a stylist's own "what was done" panel calls,
+ * task 402's VisitLinesPanel) rather than inventing a second one. Retail
+ * goods (any other unit) are money only; a bag of shampoo is not a thing a
+ * stylist "did".
+ *
+ * Best-effort and swallows its own errors on purpose: by the time this runs,
+ * the ledger rows for the sale are already written. A missed visit note must
+ * never read to the person at the till as a failed charge.
+ */
+async function logTodaysVisitLines(
+  supabase: ReturnType<typeof createBrowserSupabaseClient>,
+  partyId: string,
+  lines: CartLine[],
+) {
+  const serviceLines = lines.filter((l) => l.unit === "service" && l.qty > 0);
+  if (serviceLines.length === 0) return;
+  try {
+    const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date());
+    const { data } = await supabase
+      .from("appointments")
+      .select("id")
+      .eq("party_id", partyId)
+      .eq("status", "booked")
+      .gte("starts_at", `${todayStr}T00:00:00+08:00`)
+      .lte("starts_at", `${todayStr}T23:59:59.999+08:00`);
+    const todays = (data ?? []) as { id: string }[];
+    if (todays.length !== 1) return; // no visit today, or more than one: too ambiguous to guess which
+    const appointmentId = todays[0].id;
+    for (const line of serviceLines) {
+      for (let i = 0; i < line.qty; i++) {
+        await supabase.rpc("add_visit_line", {
+          in_appointment_id: appointmentId,
+          in_service: line.name,
+          in_price_cents: line.priceCents,
+        });
+      }
+    }
+  } catch {
+    // Best-effort, see above -- the sale itself already went through.
+  }
+}
+
 function printWhenPainted() {
   // Two rAFs, not one -- a single frame can still land before React has
   // committed the receipt DOM the print rule reads from data-print-sheet.
@@ -393,6 +446,8 @@ export function RegisterClient({
         tenders.push({ label: secondLabel, amountCents: splitSecondCents });
       }
       if (voucherAppliedCents > 0) tenders.push({ label: "Gift Credit", amountCents: voucherAppliedCents });
+
+      if (partyId) await logTodaysVisitLines(supabase, partyId, cart);
 
       setReceipt({
         at: new Date().toISOString(),
