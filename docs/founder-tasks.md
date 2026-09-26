@@ -5437,3 +5437,40 @@ Sources:
 - [Report: GlossGenius Business Breakdown & Founding Story — Contrary Research](https://research.contrary.com/company/glossgenius)
 - [How C/V Beauty Collective Scaled with GlossGenius](https://webflow.glossgenius.com/blog/success-story-cv-beauty-collective)
 - [Lovable: How an AI Coding Tool Reached $100M ARR in 8 Months](https://medium.com/@takafumi.endo/lovable-case-study-how-an-ai-coding-tool-reached-17m-arr-in-90-days-f4816e7b3f2b)
+
+### 427. ✅ 他对着一份三件清单说「可以」——三件不用他画的东西全部做完了（2026-09-26）
+
+[任务 426] 查完退步之后，我列了三件他不用先画图、我就能动手的：③ 侧栏读客户
+自己的行话（[任务 426] 已经收尾）· ④ Lookbook 加一颗「变文案」的按钮 ·
+⑤ 收银结帐自动记「这一次做了什么」。他把这三条原样贴回来，回了一个字：`可以`。
+
+**④ 「变文案」**：新的 `/api/portal/caption` 路由，照 `/api/portal/hear` 那一支的
+形状（认证 · `my_workspace` 界定范围 · 限流 · 成功失败都记 `recordAiUsage`）。
+🔴 **配方一个字都不送进去**——`formula`（Igora Royal 7-77 那一类）是这家店的
+手艺，不是要公开发的东西，送进公开文案等於把配方送给同一条街的对手。第六个
+花钱的地方（`ai_usage_surface_check` 加 `'caption'`，[重点 31] 纯加不改）。
+真登入打过：种一份真作品，按下按钮，真的写出一句文案——`Copper Balayage Melt
+for a warm, dimensional finish that our warm-toned regulars love.
+#CopperBalayage #Balayage #WarmUndertones`，配方一个字没漏进去。
+
+**⑤ 收银自动记「做了什么」**：查过 `add_visit_line` 的真身——它**要求一个真的
+`appointment_id`**，而 Register 的购物车从来不认识预约，只认识客人
+（`partyId`）。所以没有去改那支函式（[重点 31]：不整支重写，也不该我一个人
+决定「收银要不要自动生一张预约」这种产品判断），改成**只做那个不含糊的情况**：
+结帐时挂着一个真的客人，而且她今天刚好有**一笔**（不多不少）`status='booked'`
+的预约——这时候把购物车里 `unit === "service"` 的那几行自动写成
+`add_visit_line`。零售货品（其他 unit）永远只算钱，不算「这是谁做的」。
+太含糊（没挂客人、今天没有她的预约、今天两笔以上）一律不猜，照旧留白
+（[任务 89] 那条界线）。真登入验证：种一笔预约 → 查询刚好读到 1 笔 →
+两次 `add_visit_line` 真的落地成两行，服务名跟价钱都对；再加第二笔预约 →
+同一支查询老实回 2 笔，证明「太含糊就跳过」那道守卫真的会挡下来，不是
+写了没测。见 `scripts/check-caption-and-visit-log.mjs`、
+`.screenshots/caption-and-visit-log/lookbook-caption.png`。
+
+⚠️ **它还不是什么**：
+- 助手还接不到 `add_visit_line`/`add_visit_product`（走 register 结帐才会触发，
+  不是助手的动作清单里的一支）——同一份「能力有、线没接」清单剩下的项目
+- 收银台不知道「谁做的」（`in_staff_id` 永远 null）——购物车今天完全不记
+  哪一位师傅在场，不编一个
+- 只处理**今天**、**这一位客人**、**唯一一笔**预约；跨天、多分店同一客人
+  多笔预约的情况一律跳过，不是漏做，是故意的边界
