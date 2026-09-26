@@ -70,6 +70,15 @@ export const SALON_NAV: Record<string, SalonNavRule> = {
 export type SalonNavContext = {
   pageKeys: readonly string[];
   isOwner: boolean;
+  /**
+   * page_key -> the title the customer set on it (project_pages.title), or
+   * null/absent when she never renamed it. Task 426: the new sidebar had its
+   * labels written into the code, so a customer's own rename (via the
+   * assistant's rename_project_page, the same action the old shell reads)
+   * never showed up here -- every salon saw the identical English words the
+   * old shell's `pageLabel()` was built specifically to avoid.
+   */
+  pageTitles?: Readonly<Record<string, string | null>>;
 };
 
 /**

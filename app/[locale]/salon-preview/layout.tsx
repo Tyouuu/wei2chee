@@ -29,16 +29,22 @@ export default async function SalonPreviewLayout({ children }: { children: React
   const [auth, workspace, pages] = await Promise.all([
     supabase.auth.getUser(),
     supabase.rpc("my_workspace"),
-    supabase.from("project_pages").select("project_id, page_key"),
+    supabase.from("project_pages").select("project_id, page_key, title"),
   ]);
 
   const user = auth.data.user;
   const row = (workspace.data as { project_id: string; role: string }[] | null)?.[0];
   if (user?.email && row?.project_id) {
+    const myPages = (
+      (pages.data ?? []) as { project_id: string; page_key: string; title: string | null }[]
+    ).filter((p) => p.project_id === row.project_id);
     viewer = {
-      pageKeys: ((pages.data ?? []) as { project_id: string; page_key: string }[])
-        .filter((p) => p.project_id === row.project_id)
-        .map((p) => p.page_key),
+      pageKeys: myPages.map((p) => p.page_key),
+      // Only a real rename earns a slot -- an empty string is "never touched
+      // it", the same reading pageLabel() gives project_pages.title elsewhere.
+      pageTitles: Object.fromEntries(
+        myPages.filter((p) => p.title?.trim()).map((p) => [p.page_key, p.title]),
+      ),
       isOwner: row.role !== "staff",
       viewerName: user.email.split("@")[0],
     };

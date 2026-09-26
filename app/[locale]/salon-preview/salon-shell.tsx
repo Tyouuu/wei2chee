@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from "react";
 import Link from "next/link";
-import { salonRowVisible, type SalonNavContext } from "@/lib/portal/salon-nav";
+import { salonRowVisible, SALON_NAV, type SalonNavContext } from "@/lib/portal/salon-nav";
 
 /**
  * The founder's own Stitch-generated shell for the salon redesign (Task 405),
@@ -161,16 +161,32 @@ export function SalonViewerProvider({ value, children }: { value: SalonViewer | 
 }
 
 /**
+ * The word this business's own owner (or her assistant, via rename_project_page)
+ * put on this row's page, if she ever bothered -- same read the old shell's
+ * pageLabel() does, so a rename shows up here too instead of only there
+ * (task 426). A `SalonNavKey` maps to a single real page_key for every row
+ * that stands on exactly one page; a row backed by several (Packages & Plans)
+ * or none (More Tools, Tenant Settings) has nothing of its own to rename, so
+ * it keeps the fixed word.
+ */
+function rowLabel(viewer: SalonViewer | null, navKey: string, fallback: string): string {
+  const pageKey = SALON_NAV[navKey]?.needs.length === 1 ? SALON_NAV[navKey].needs[0] : null;
+  const own = pageKey ? viewer?.pageTitles?.[pageKey]?.trim() : undefined;
+  return own || fallback;
+}
+
+/**
  * The two halves of the "Packages & Plans" sidebar row: a pass or prepaid
  * balance, and a monthly membership. Two pages, one place. The Memberships tab
  * collects money, so a cashier is not shown it (and a lone tab is not a strip).
  */
 export function PrepaidTabs({ active }: { active: "packages" | "memberships" }) {
   const viewer = useContext(SalonViewerContext);
+  const label = (key: string, fallback: string) => rowLabel(viewer, key, fallback);
   const tabs = [
-    { key: "packages", href: "/en/salon-preview/packages", label: "Packages & Prepaid" },
+    { key: "packages", href: "/en/salon-preview/packages", label: label("packages", "Packages & Prepaid") },
     ...(!viewer || viewer.isOwner || active === "memberships"
-      ? [{ key: "memberships", href: "/en/salon-preview/memberships", label: "Memberships" }]
+      ? [{ key: "memberships", href: "/en/salon-preview/memberships", label: label("memberships", "Memberships") }]
       : []),
   ];
   if (tabs.length < 2) return null;
@@ -265,8 +281,9 @@ export function SalonSidebar({
               Daily Operations
             </div>
             <nav className="space-y-0.5">
-              {dailyRows.map((item) =>
-                item.href ? (
+              {dailyRows.map((item) => {
+                const label = rowLabel(viewer, item.key, item.label);
+                return item.href ? (
                   <Link
                     key={item.key}
                     href={item.href}
@@ -279,7 +296,7 @@ export function SalonSidebar({
                   >
                     <div className="flex items-center gap-3">
                       <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
-                      <span>{item.label}</span>
+                      <span>{label}</span>
                     </div>
                     {item.key === active && <span className="material-symbols-outlined text-[14px]">chevron_right</span>}
                   </Link>
@@ -290,10 +307,10 @@ export function SalonSidebar({
                     title="Coming after Overview and Appointments are signed off"
                   >
                     <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
-                    <span>{item.label}</span>
+                    <span>{label}</span>
                   </div>
-                ),
-              )}
+                );
+              })}
             </nav>
           </div>
           <div className="space-y-1">
@@ -301,8 +318,9 @@ export function SalonSidebar({
               Management
             </div>
             <nav className="space-y-0.5">
-              {managementRows.map((item) =>
-                item.href ? (
+              {managementRows.map((item) => {
+                const label = item.key ? rowLabel(viewer, item.key, item.label) : item.label;
+                return item.href ? (
                   <Link
                     key={item.label}
                     href={item.href}
@@ -315,7 +333,7 @@ export function SalonSidebar({
                   >
                     <div className="flex items-center gap-3">
                       <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
-                      <span>{item.label}</span>
+                      <span>{label}</span>
                     </div>
                     {item.key === active && <span className="material-symbols-outlined text-[14px]">chevron_right</span>}
                   </Link>
@@ -326,10 +344,10 @@ export function SalonSidebar({
                     title="Not built yet"
                   >
                     <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
-                    <span>{item.label}</span>
+                    <span>{label}</span>
                   </div>
-                ),
-              )}
+                );
+              })}
             </nav>
           </div>
         </div>
