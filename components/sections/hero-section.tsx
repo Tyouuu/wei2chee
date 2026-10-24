@@ -318,8 +318,8 @@ export function HeroSection({ onStart }: { onStart: (brief: string) => void }) {
             <img
               src="/hero-system.jpg"
               alt={t("shotAlt")}
-              width={1360}
-              height={905}
+              width={1456}
+              height={600}
               loading="eager"
               className="block w-full [mask-image:linear-gradient(to_bottom,black_78%,transparent)]"
             />
