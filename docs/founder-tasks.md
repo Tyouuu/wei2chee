@@ -5632,3 +5632,25 @@ Booksy 按人头$20/月；GlossGenius 三档分级）。Formae RM150/月打平�
 - [ ] 评价接 Google/Facebook 公开渠道——排在后面，不急
 - [ ] 产品名字 · 官网文案里要不要正式引用"RM150/月，不按人头"这条差异化卖点，
       是否要做成官网单独一节——等他看过这份结果决定
+
+### 431. 侧栏跟几个页面网址写死 `/en/salon-preview/...`，没用 locale 参数（2026-10-24 查证）
+
+稽核那一轮发现的，这次复查确认还在：`salon-shell.tsx`（侧栏 13 行全部如此，
+`SALON_NAV` 那个模块级常量数组）＋ `audit-log/page.tsx` · `overview/page.tsx` ·
+`schedule/schedule-client.tsx` · `settings-people.tsx` · `setup/page.tsx` ·
+`tools/page.tsx`，一共 7 个文件硬编码 `/en/salon-preview/...`。
+
+如果有人走 `/zh/salon-preview/...`（浏览器语言设成中文，被中间件导去 zh 前缀），
+点侧栏任何一行会被悄悄换回 `/en/...`——内容本身不受影响（整个 salon-preview
+目录零个文件用 `useTranslations`，文案本来就是写死的英文，符合[重点13]「系统对
+客户讲英文」），只是网址前缀不统一。
+
+⚠️ **这一次没有动手**：`SALON_NAV` 是模块级常量，不在组件函式里，没有
+`locale` 可用；要修得把 href 存成不带前缀的相对路径（`/salon-preview/overview`），
+在每个 render 点（`salon-shell.tsx` 至少 4 处：191/289/292/326/329 行附近）用
+`useLocale()` 动态拼上去——牵动一个共用数组 + 好几处渲染点，而且这个情境
+本身出现概率低（产品对客户只讲英文，zh 前缀只影响 URL 不影响看到的字），
+不是"产品要做的功能"，排到后面。
+
+- [ ] 把 `SALON_NAV` 的 href 改成相对路径，render 点用 `useLocale()` 拼前缀
+- [ ] 其余 6 个文件各自确认是不是也共用同一份数据，还是各自独立字符串
