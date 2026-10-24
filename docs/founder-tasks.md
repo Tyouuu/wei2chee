@@ -5654,3 +5654,83 @@ Booksy 按人头$20/月；GlossGenius 三档分级）。Formae RM150/月打平�
 
 - [ ] 把 `SALON_NAV` 的 href 改成相对路径，render 点用 `useLocale()` 拼前缀
 - [ ] 其余 6 个文件各自确认是不是也共用同一份数据，还是各自独立字符串
+
+### 432. ✅ AI 助手第一次接进新版沙龙页——试点做在预约页（2026-10-24）
+
+今天稽核出来的最大技术缺口：对话助手（能真的帮他开单、记帐、扣库存那一支，
+`work-assistant.tsx`，27+ 个动作）在"唯一一个 UI 版本"（任务424）里一个入口
+都没有，只能绕回旧版深色界面才摸得到。
+
+**先派了一个分身去读完 2200 行的 `/api/portal/edit/route.ts`、
+`layout-ops.ts`、`record-ops.ts`，再自己核实了它的关键结论**（碰 AI 写入路径，
+[重点26] 不能只信分身的报告）：
+- 大多数 `WORK_OPS` 动作（开新单、记一笔钱）根本不需要"回指画面上已显示的
+  某一行"，只需要 `pageKey` + 对话内容。只有少数"操作已有一行"的动作
+  （标到了、认成客人、冲正……）才需要
+- `record_id` 的合法性**完全在资料库层**验证（RLS + 每支 RPC 自己的
+  `works_here`/`sees_money` 检查），用的是真登入身分——不是在 route 这层，
+  所以新路径不用重造一层验证，编错编号 RPC 直接拒绝
+- Puck 树唯一的另一个用途（`columnsForTarget`，动态栏位）沙龙那十四页
+  完全不会碰到——它们走的是各自专属的 RPC，不是通用的 pipeline/directory
+  模块那条路
+
+**做了什么**（`252e353`）：
+- `describeDay`（`layout-ops.ts`）加一个 `export`——给新路径复用同一套
+  产生 `record=<uuid> ...` 格式的函式，不用教模型认第二种格式
+- 新的 `lib/portal/salon-work-describe.ts`：把沙龙页面已经抓到的真资料
+  （不是新查询）塞成 `describeDay` 要的形状
+- `/api/portal/edit/route.ts` 加一个可选的 `salonDescription` 参数，有就用它
+  代替 `describeLayout(layout, here)`——`WORK_OPS`、权限检查、每一支写入
+  函式一个字没动
+- 新的 `work-assistant-panel.tsx`：`work-assistant.tsx` 的轻量版，去掉 Puck
+  依赖，UI/交互逻辑整段复制（药丸输入框、拍照、语音、核对/撤销那一站）
+- 接进预约页（Schedule，最高频那一页）试点：他正在看的那一天，真的预约，
+  真的编号
+
+🔴 **路上抓到一个真错**：第一版面板直接抄了旧版的 CSS 变数
+（`--color-canvas` 那一批），而**沙龙页面整个目录零个文件定义过这些变数**
+（沙龙用的是写死的十六进位颜色，不是这套 token）——面板因此整个透明，
+实拍上跟页面本身的按钮叠在一起看不清楚。这正是这个仓库撞过很多次的那个
+坑（变数没定义不报错，只是什么都不画）。全部换成沙龙页面真的用的那批颜色
+后重新实拍，确认是一块实色的面板。
+
+**验证**：`check-salon-work-ai.mjs`（真注册、真预约、真浏览器）——
+"Madam Chong has arrived" 真的把 `arrived_at` 写进资料库；编一个不存在的
+客人名字，诚实拒绝（"no matching booking"），没有乱标一笔。既有的
+`shoot-schedule-real.mjs` 66 条原样全过。`check:salon-pages` 干净。
+全套单元测试跑过——顺手抓到并修掉一个**跟这件事无关的真回归**（见下面）。
+
+⚠️ **还没做的**：
+- [ ] 其余十三页还没接——先只做预约页这一个试点
+- [ ] `grant_credit`/`add_treatment_note` 这类按**客人**走的动作，候选清单
+      要换成客人的 id（不是预约的 id），不能跟 Schedule 这份候选清单生成器
+      复用——下一轮接 Clients 页面时要记住
+- [ ] 侧栏（`salon-shell.tsx`）还没有打开这个面板的入口——Schedule 页面上
+      现在是一颗固定在右下角的浮动按钮，跟旧版窄屏那颗同一个形状，不是
+      长相完全定案的样子（[重点22c]：长相是画面那一边的地盘）
+- 🔴 这一条改完**只 commit 没有 push**——[重点39]：先做 demo 给他看，
+  他说 OK，才推上 `origin/main`
+
+### 433. 🔴 顺手抓到的真回归：官网 proofA/proofB 换了意思，测试没跟上（2026-10-24）
+
+跑全套单元测试时发现 `lib/__tests__/landing-claims.test.ts` 3 条红——
+不是今天 AI 助手那件事引起的，是[任务429]（官网定位收窄）那次改动留下的，
+一直没有人跑过 `vitest` 去发现。
+
+那支测试原本守的是"官网上 proofA/proofB 两个数字不能跟代码漂开"
+（proofA = `STYLE_ORDER` 套数、proofB = `components/blocks` 档案数）。
+[任务429] 把这两个数字的**意思**换了（14 个真页面、1 个价钱不按人头），
+测试还在检查旧意思，所以一直红。
+
+✅ **已修**（`fa7cb53`）：proofA 的测试改成对新的真数——而且顺手抓到
+我当初验证「14」用的方法不精确：侧栏行数（`SALON_NAV`）其实只有 13 行
+（`packages-and-prepaid` 一行桥接套票跟会员两条路由），读真的路由数
+（`salon-preview/` 底下真的 `page.tsx`，排掉 setup/tools）才是对的量法，
+量出来正好是 14——官网那句话算是蒙对了，现在有真的检查守着，不是运气。
+proofB 换成定价宣称后不再是一个"数档案"能验的东西，拿掉了假的等式检查，
+不留一条会一直绿却什么都没验的假检查。第二张线稿的"219"数字（还是真的）
+改成独立对 `components/blocks`，不再被钉死要等於 proofB。
+
+全套测试跑完：13 个红，跟这个仓库长期的已知基准（`site-hero-fields` ×5 ·
+`module-catalog` ×4 · `nudge-kinds` ×4，全部是别的 session 的地盘）完全
+对得上，零个新增。
