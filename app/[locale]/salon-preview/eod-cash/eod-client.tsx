@@ -418,46 +418,41 @@ export function EodCashClient({
                       <div className="px-5 py-4 border-b border-[#e2e2e6] flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="material-symbols-outlined text-[18px] text-[#47464b]">calculate</span>
-                          <h2 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">Physical Cash Denomination Count</h2>
+                          <h2 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">Physical Cash Count</h2>
                         </div>
                       </div>
-                      <div className="w-full overflow-x-auto">
-                        <table className="w-full border-collapse text-left">
-                          <thead>
-                            <tr className="bg-[#f3f3f7] text-[#47464b] text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase border-b border-[#e2e2e6]">
-                              <th className="py-2.5 px-4">Denomination</th>
-                              <th className="py-2.5 px-4">Face Value</th>
-                              <th className="py-2.5 px-4 w-44">Counted Qty</th>
-                              <th className="py-2.5 px-4 text-right">Line Subtotal</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[#e2e2e6] text-[13.5px] leading-[18px]">
-                            {DENOMINATIONS.map((d) => (
-                              <tr key={d.key} className="hover:bg-[#f3f3f7] transition-colors">
-                                <td className="py-3 px-4 flex items-center gap-2.5">
-                                  <span className={"inline-block w-6 text-center text-[11.5px] leading-4 tracking-[0.04em] font-bold py-0.5 rounded border " + d.badgeClasses}>{d.value}</span>
-                                  <span className="font-medium text-[#1a1c1f]">{d.label}</span>
-                                </td>
-                                <td className="py-3 px-4 tabular-nums text-[#47464b]">{ringgit(d.value * 100)}</td>
-                                <td className="py-3 px-4">
-                                  <div className="inline-flex items-center rounded-lg border border-[#e2e2e6] bg-[#ffffff]">
-                                    <button onClick={() => adjust(d.key, -1)} disabled={locked} aria-label={`One fewer ${d.label}`} className="w-8 h-8 flex items-center justify-center text-[#47464b] hover:text-[#1a1c1f] hover:bg-[#f3f3f7] active:scale-[0.9] transition-all rounded disabled:opacity-40 disabled:hover:bg-transparent">
-                                      <span className="material-symbols-outlined text-[16px]">remove</span>
-                                    </button>
-                                    <input
-                                      className="w-14 text-center text-[13.5px] leading-[18px] tracking-[0.01em] font-medium tabular-nums text-[#1a1c1f] border-x border-[#e2e2e6] focus:outline-none py-1 bg-transparent"
-                                      type="number" min={0} value={counts[d.key]} onChange={(e) => setCount(d.key, e.target.value)} readOnly={locked}
-                                    />
-                                    <button onClick={() => adjust(d.key, 1)} disabled={locked} aria-label={`One more ${d.label}`} className="w-8 h-8 flex items-center justify-center text-[#47464b] hover:text-[#1a1c1f] hover:bg-[#f3f3f7] active:scale-[0.9] transition-all rounded disabled:opacity-40 disabled:hover:bg-transparent">
-                                      <span className="material-symbols-outlined text-[16px]">add</span>
-                                    </button>
-                                  </div>
-                                </td>
-                                <td className="py-3 px-4 text-right tabular-nums text-[13.5px] leading-[18px] tracking-[0.01em] text-[#1a1c1f] font-medium">{ringgit(counts[d.key] * d.value * 100)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      {/* Simplification pass (founder-tasks 任务428, cut order item 6): the
+                          founder's own call, after I flagged that a per-note total still has
+                          to be derived from the denominations server-side (lock_day_closing
+                          checks this, on purpose -- so nobody can just type a total) -- keep
+                          counting by note, don't collapse it to one number, but make the
+                          screen tighter, since this is heading to mobile next and six wide
+                          table rows don't fit a phone. A compact grid of tiles instead of a
+                          four-column table: no separate "Face Value" column (the badge
+                          already says RM100) and no separate "Line Subtotal" column (the
+                          Total Physical Count below already sums it) -- just a value badge
+                          and a stepper per note, six taps away instead of six table rows. */}
+                      <div className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                        {DENOMINATIONS.map((d) => (
+                          <div key={d.key} className="rounded-lg border border-[#e2e2e6] p-2.5 flex flex-col gap-2">
+                            <div className="flex items-center justify-between">
+                              <span className={"inline-flex items-center justify-center min-w-[32px] px-1.5 h-6 text-[11.5px] leading-4 tracking-[0.04em] font-bold rounded border " + d.badgeClasses}>{d.value}</span>
+                              <span className="text-[11px] text-[#77767b] tabular-nums">{ringgit(counts[d.key] * d.value * 100)}</span>
+                            </div>
+                            <div className="flex items-center rounded-lg border border-[#e2e2e6] bg-[#ffffff]">
+                              <button onClick={() => adjust(d.key, -1)} disabled={locked} aria-label={`One fewer ${d.label}`} className="w-8 h-8 shrink-0 flex items-center justify-center text-[#47464b] hover:text-[#1a1c1f] hover:bg-[#f3f3f7] active:scale-[0.9] transition-all rounded disabled:opacity-40 disabled:hover:bg-transparent">
+                                <span className="material-symbols-outlined text-[16px]">remove</span>
+                              </button>
+                              <input
+                                className="w-full min-w-0 text-center text-[13.5px] leading-[18px] tracking-[0.01em] font-medium tabular-nums text-[#1a1c1f] border-x border-[#e2e2e6] focus:outline-none py-1 bg-transparent"
+                                type="number" min={0} value={counts[d.key]} onChange={(e) => setCount(d.key, e.target.value)} readOnly={locked}
+                              />
+                              <button onClick={() => adjust(d.key, 1)} disabled={locked} aria-label={`One more ${d.label}`} className="w-8 h-8 shrink-0 flex items-center justify-center text-[#47464b] hover:text-[#1a1c1f] hover:bg-[#f3f3f7] active:scale-[0.9] transition-all rounded disabled:opacity-40 disabled:hover:bg-transparent">
+                                <span className="material-symbols-outlined text-[16px]">add</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                       <div className="bg-[#f3f3f7] p-4 border-t border-[#e2e2e6] flex flex-col md:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-6 text-[13.5px] leading-5">
