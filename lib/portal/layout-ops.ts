@@ -1273,7 +1273,7 @@ function describeRows(table: TableModel): string {
  * 而那正是这一页敢把底下那张一模一样的表拿掉的前提）。认不出的照样印，
  * 只是没有把手：他看得见它，而模型动不了它 —— 往拒绝的方向坏。
  */
-function describeDay(props: Record<string, unknown>): string {
+export function describeDay(props: Record<string, unknown>): string {
   const rows = Array.isArray(props.rows) ? (props.rows as Record<string, unknown>[]) : [];
   if (!rows.length) return "";
   const word = (v: unknown) => (typeof v === "string" && v ? v : "");

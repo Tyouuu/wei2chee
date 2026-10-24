@@ -9,6 +9,8 @@ import {
   type BusinessContext,
 } from "@/lib/templates/industry-template";
 import { MaterialSymbolsLink } from "../salon-shell";
+import { WorkAssistantPanel } from "../work-assistant-panel";
+import { describeSalonAppointments } from "@/lib/portal/salon-work-describe";
 import { ScheduleClient } from "./schedule-client";
 import type { LaneItem, StaffLane } from "./schedule-timeline";
 
@@ -458,9 +460,27 @@ export default async function SalonSchedulePreview({
     });
   }
 
+  // ── 给助手看的那一份：他正在看的这一天，真的预约，真的编号 ───────────
+  // `apptRows` 已经照 `dateStr` 筛过了——助手描述的是他眼前这一天，不是
+  // 整个礼拜。只给真的预约（kind==="booking"），不给时段屏蔽那种占位。
+  const staffNameById = new Map(staffRows.map((s) => [s.id, s.name]));
+  const pageDescription = describeSalonAppointments(
+    apptRows
+      .filter((a) => a.kind === "booking")
+      .map((a) => ({
+        id: a.id,
+        startsAt: a.starts_at,
+        endsAt: a.ends_at,
+        party: a.party,
+        service: a.service,
+        staffName: a.staff_id ? (staffNameById.get(a.staff_id) ?? null) : null,
+      })),
+  );
+
   return (
     <>
       <MaterialSymbolsLink />
+      <WorkAssistantPanel pageKey="bookings" pageDescription={pageDescription} pages={[]} />
       <ScheduleClient
         projectId={projectId}
         dateStr={dateStr}

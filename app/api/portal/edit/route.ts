@@ -790,7 +790,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const { layout, instruction, pages, imagePath, generated, history, pageKey, selected, surface } = (body ?? {}) as {
+  const { layout, salonDescription, instruction, pages, imagePath, generated, history, pageKey, selected, surface } = (body ?? {}) as {
     /** Which module is open. Sent by the browser, trusted for nothing except
      *  deciding whether a table row on THIS page is a business record or a
      *  layout row -- and the RPC it routes to resolves the project from the
@@ -823,6 +823,18 @@ export async function POST(req: NextRequest) {
      */
     surface?: "design" | "work" | null;
     layout?: PuckLayout;
+    /**
+     * 给没有 Puck 排版树的页面用的，`describeLayout(layout, here)` 的平行
+     * 替代品——新版沙龙十四页（`salon-preview/`）是真的 React server
+     * component，没有 `Data` 树可以传。见 `lib/portal/salon-work-describe.ts`
+     * 的档头：格式跟 `describeDay` 产生的一样（同一支函式），只是喂它的资料
+     * 来源换了，系统提示词一个字不用跟着改。
+     *
+     * 有这个字段就用它，`layout` 仍然要传（哪怕是 `{content: []}`）——校验
+     * 那一行（`!layout || !Array.isArray(layout.content)`）不因为这个字段
+     * 的出现而放宽，保住其余逻辑一个字不用动。
+     */
+    salonDescription?: string;
     instruction?: string;
     /**
      * A picture the owner attached -- 🔴 A PATH IN A PRIVATE BUCKET, NOT A URL.
@@ -1225,7 +1237,7 @@ measured 2026-09-09 by check:work-ai.
 ` : ""}${statusLine ? `${statusLine}
 
 ` : ""}${factsBlock ? `${factsBlock}\n\n` : ""}Blocks currently on this page:
-${describeLayout(layout, here)}
+${typeof salonDescription === "string" && salonDescription ? salonDescription : describeLayout(layout, here)}
 ${recent ? `\n刚才这段对话里发生过的事（最新的在最下面）:\n${recent}\n` : ""}
 ${
   /*
