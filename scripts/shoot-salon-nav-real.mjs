@@ -233,7 +233,10 @@ try {
   const staffOnEod = await rowsIn(staffPage);
   check("🔴 收银员直接打开收工页（会被挡下来）：侧栏还是画着那一行，不假装他不在那里", staffOnEod.includes("eod-cash"), show(staffOnEod));
   await staffPage.goto(`${BASE}/en/salon-preview/packages`, { waitUntil: "networkidle", timeout: 180000 });
-  check("🔴 收银员打开套票会员那一页：只有套票，没有「Memberships」分页（那一页收钱，是老板的）—— 一个分页不画成一排",
+  // Memberships 整页退场了（founder-tasks 任务426 简化案）：PrepaidTabs 永远
+  // 只有一个 tab，谁都看不到分页，不分老板还是收银员。这一条照旧成立，
+  // 只是理由换了 —— 以前是「分页会画但收银员看不到」，现在是「谁都没有分页」。
+  check("🔴 收银员打开套票那一页：没有分页（Memberships 已经退场，不是只对收银员藏起来）",
     (await staffPage.locator("nav[aria-label='Packages and memberships']").count()) === 0);
   admin.auth.admin.deleteUser(staffUser.user.id).catch(() => {});
 } finally {

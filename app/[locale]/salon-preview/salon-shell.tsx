@@ -183,11 +183,14 @@ function rowLabel(viewer: SalonViewer | null, navKey: string, fallback: string):
 export function PrepaidTabs({ active }: { active: "packages" | "memberships" }) {
   const viewer = useContext(SalonViewerContext);
   const label = (key: string, fallback: string) => rowLabel(viewer, key, fallback);
+  // Memberships retired from the UI (founder's call, 2026-10 simplification
+  // pass): it was a page built on a plan "grouped out of clients' own names,
+  // not a real table" (task413's own words) -- exactly the kind of
+  // match-the-big-guys complexity the founder wants cut first. The
+  // Memberships tab/page/route still exist; nothing links to them any more.
+  // Packages & Prepaid stays, it's what a salon actually sells.
   const tabs = [
     { key: "packages", href: "/en/salon-preview/packages", label: label("packages", "Packages & Prepaid") },
-    ...(!viewer || viewer.isOwner || active === "memberships"
-      ? [{ key: "memberships", href: "/en/salon-preview/memberships", label: label("memberships", "Memberships") }]
-      : []),
   ];
   if (tabs.length < 2) return null;
   return (

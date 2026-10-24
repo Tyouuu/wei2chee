@@ -193,9 +193,11 @@ try {
   check("🔴 侧栏：「Packages & Plans」那一行亮着（会员并进套票那一行，不是单独一行）",
     (await page.locator("aside nav a", { hasText: "Packages & Plans" }).count()) === 1
       && (await page.locator("aside nav a[href='/en/salon-preview/memberships']").count()) === 0);
-  check("🔴 页面顶上有两个分页：Packages & Prepaid ｜ Memberships，后者是当前页",
-    (await page.locator("nav[aria-label='Packages and memberships'] a").count()) === 2
-      && (await page.locator("nav[aria-label='Packages and memberships'] a[aria-current='page']").innerText()) === "Memberships");
+  // Memberships 整页退场了（founder-tasks 任务426）：侧栏不再链到它，顶上
+  // 也不再画任何分页 —— 这一页今天只能靠知道网址的人直接打开，而且打开后
+  // 看到的不该再是「两个分页」的样子。
+  check("🔴 页面顶上没有分页（Memberships 已经退场，只能直接打网址进来）",
+    (await page.locator("nav[aria-label='Packages and memberships'] a").count()) === 0);
   await page.screenshot({ path: `${OUT}/1-full.png`, fullPage: true });
 
   console.log("\n⑤ 真的收一期");

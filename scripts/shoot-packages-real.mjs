@@ -137,11 +137,12 @@ try {
 
   await ownerPage.screenshot({ path: `${OUT}/1-list.png`, fullPage: true });
 
-  // 套票 · 会员是一个入口两个页：顶上两个分页，老板点得到会员那一页。
+  // Memberships 退场了（founder-tasks 任务426 简化案）：PrepaidTabs 现在
+  // 永远只有一个 tab("packages"),tabs.length < 2 时整条不画。不该再有
+  // 「两个分页」这回事 —— 这一页顶上什么分页都不画。
   const tabLinks = ownerPage.locator("nav[aria-label='Packages and memberships'] a");
-  if ((await tabLinks.count()) === 2 && (await ownerPage.locator("nav[aria-label='Packages and memberships'] a[aria-current='page']").innerText()) === "Packages & Prepaid")
-    ok("🔴 顶上有两个分页：Packages & Prepaid（当前）｜ Memberships");
-  else no("分页没画对", await tabLinks.allInnerTexts().catch(() => "?"));
+  if ((await tabLinks.count()) === 0) ok("🔴 Memberships 退场了：顶上没有分页（只有套票这一件）");
+  else no("还留着分页", await tabLinks.allInnerTexts().catch(() => "?"));
   if ((await ownerPage.locator("aside nav a", { hasText: "Packages & Plans" }).count()) === 1) ok("侧栏那一行叫「Packages & Plans」");
   else no("侧栏那一行的名字不对");
 
