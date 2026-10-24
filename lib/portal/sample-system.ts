@@ -14,41 +14,48 @@
  * it is the product's central demonstration, in the wrong language, on the
  * screen where somebody decides whether to trust it.
  *
- * The trade stays a renovation contractor in both. The language changes; the
- * business does not — the point of the sample is that the system speaks the
- * OWNER's vocabulary, and 「三房翻新」 and "3-bedroom refit" are the same
- * owner saying the same thing to two different readers.
+ * The trade stays the same in both. The language changes; the business does
+ * not — the point of the sample is that the system speaks the OWNER's
+ * vocabulary, and the same row reads the same way to two different readers.
+ *
+ * ── 2026-10 定位收窄（founder-points 重点38）────────────────────────────
+ * 这里以前是一间装修承包商（「三房翻新」「Taman Desa」那一批）。Formae
+ * 现在只做沙龙这一个行业，而这支是访客决定信不信这个产品的那个画面——
+ * 还在讲装修，跟「我们是沙龙系统」这句话直接矛盾。换成一张预约单：
+ * 服务项目 · 客人 · 金额 · 状态，四栏结构、五段流程、四行示例、
+ * tones 顺序全部照旧（positive/warning/neutral/negative 对应第 1–4 行），
+ * 只换了行业的词。
  */
 
 type Lang = "zh" | "en" | (string & {});
 
 const COPY = {
   zh: {
-    title: "报价单",
-    subtitle: "发给客户的报价，跟进哪些已确认。",
-    caption: "报价单列表",
-    workflow: "你的业务流程",
-    stages: ["客户", "报价", "订金", "施工", "尾款"],
-    columns: ["报价内容", "客户", "金额", "状态"],
+    title: "预约单",
+    subtitle: "客人预约的服务，跟进哪些已经确认。",
+    caption: "预约列表",
+    workflow: "你的今日流程",
+    stages: ["咨询", "已预约", "到店", "服务中", "完成"],
+    columns: ["服务项目", "客人", "金额", "状态"],
     rows: [
-      ["Taman Desa 三房翻新", "陈先生", "RM 48,500", "已确认"],
-      ["Bukit Jalil 厨房改造", "李太太", "RM 22,800", "等确认"],
-      ["Cheras 店面装修", "王老板", "RM 96,000", "报价中"],
-      ["Ampang 公寓地板", "林小姐", "RM 8,400", "已逾期"],
+      ["挑染 + 护色", "陈小姐", "RM 280", "已确认"],
+      ["凝胶美甲", "黄太太", "RM 80", "等确认"],
+      ["角蛋白护理", "法拉小姐", "RM 450", "进行中"],
+      ["剪发 + 吹发", "林先生", "RM 60", "未到"],
     ],
   },
   en: {
-    title: "Quotations",
-    subtitle: "Quotes sent out, and which ones are confirmed.",
-    caption: "Quotation list",
-    workflow: "Your workflow",
-    stages: ["Enquiry", "Quoted", "Deposit", "On site", "Final"],
-    columns: ["Item", "Customer", "Amount", "Status"],
+    title: "Appointments",
+    subtitle: "Bookings coming in, and which ones are confirmed.",
+    caption: "Appointment list",
+    workflow: "Your day",
+    stages: ["Enquiry", "Booked", "Arrived", "In service", "Done"],
+    columns: ["Service", "Client", "Amount", "Status"],
     rows: [
-      ["Taman Desa 3-bedroom refit", "Mr. Chan", "RM 48,500", "Confirmed"],
-      ["Bukit Jalil kitchen", "Mrs. Lee", "RM 22,800", "Awaiting"],
-      ["Cheras shopfront", "Mr. Ong", "RM 96,000", "Quoting"],
-      ["Ampang condo flooring", "Ms. Lim", "RM 8,400", "Overdue"],
+      ["Balayage + Toner", "Ms. Tan", "RM 280", "Confirmed"],
+      ["Gel Manicure", "Mrs. Wong", "RM 80", "Awaiting"],
+      ["Keratin Treatment", "Ms. Farah", "RM 450", "In service"],
+      ["Haircut & Blow Dry", "Mr. Lim", "RM 60", "No-show"],
     ],
   },
 } as const;

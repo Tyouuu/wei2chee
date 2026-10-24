@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { HeroSection } from "@/components/sections/hero-section";
-import { IndustrySelect } from "@/components/sections/industry-select";
+import { getIndustries } from "@/lib/industries";
 import { PeerCaseGallery } from "@/components/sections/peer-case-gallery";
 import { OnboardingStepper } from "@/components/onboarding/stepper";
 import { AnalysisReveal } from "@/components/sections/analysis-reveal";
@@ -31,6 +31,20 @@ export default function HomePage() {
   const [leadId, setLeadId] = useState<string | null>(null);
   const [heroBrief, setHeroBrief] = useState("");
 
+  // 2026-10 定位收窄：不再给陌生访客自己挑行业（founder-points 重点38）—
+  // Formae 现在只做一件事（沙龙），所以这一页不再问「你是哪一行」，直接
+  // 把访客接到沙龙那一组同业案例 / 问卷上。自动找 slug="beauty" 的那一行，
+  // 找不到就什么都不选（industries 表里本来就该有，找不到是数据问题，
+  // 不该在这里猜一个假的）。
+  useEffect(() => {
+    getIndustries()
+      .then((rows) => {
+        const salon = rows.find((r) => r.slug === "beauty");
+        if (salon) setSelectedIndustry(salon);
+      })
+      .catch(console.error);
+  }, []);
+
   return (
     <main>
       {/* One lit surface behind the whole page, so scrolling past the Hero
@@ -55,10 +69,11 @@ export default function HomePage() {
           document.getElementById("industry-select")?.scrollIntoView({ behavior: "smooth" });
         }}
       />
-      {/* Before the trade picker, not after: a visitor has to know what they
-          are being asked to pick a trade FOR. Everything below the picker is
-          conditional on having picked one, so this is the last thing an
-          undecided visitor reads if it sits underneath. */}
+      {/* Before the case gallery, not after — same reason as before the old
+          trade picker: a visitor has to know what this is explaining before
+          reading the explanation. (The picker itself is gone; see the note
+          above `id="industry-select"` below — this ordering comment still
+          holds for what came after it.) */}
       <SentenceDrawing />
       <SystemDrawing />
       <HandoverDrawing />
@@ -70,7 +85,11 @@ export default function HomePage() {
           white across it, because from here down the page is about the
           visitor's business rather than about us. */}
       <Showroom />
-      <IndustrySelect onSelect={setSelectedIndustry} />
+      {/* 原本这里是 IndustrySelect（八张行业卡，访客自己点一张）。现在只做
+          沙龙，industry 在上面的 useEffect 里自动选好了，不用再让访客选一次
+          他已经知道答案的问题。`id="industry-select"` 留着：Hero 那颗
+          「开始」按钮滚到的就是这个位置，不改它，落点还是这一段同业案例。 */}
+      <div id="industry-select" />
       {selectedIndustry && !answers && (
         <>
           <PeerCaseGallery industryId={selectedIndustry.id} />
