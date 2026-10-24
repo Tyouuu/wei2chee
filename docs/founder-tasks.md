@@ -5513,8 +5513,14 @@ Stock 进货单收窄 → EOD Cash 简化。**
       `visit_earnings` · `staff_earnings` · `hours_worked_of` · `party_value` ·
       `party_visits` · 用料成本那一整套都还在跑，只是这一页不再读、不再画。
       29/29 真登入过，`page.tsx` 的 `Promise.all` 从 12 支查询砍到 5 支
-- [ ] **④ Stylists 抽成阶梯收窄** —— 从最多 6 档窄成 1-2 档
-      （`stylists/tier-editor.tsx` · `stylist-client.tsx`）
+- [x] ✅ **④ Stylists 抽成阶梯收窄**（`994b650`）—— 「+ Add a band」从 6 档
+      窄成 2 档，三五人的店一句「做满五百之后抽多一点」就是两档。
+      🔴 **只改了这支编辑器**，没有动 `lib/portal/commission.ts` 里
+      `tierProblems()` 自己的六档上限——那份共用逻辑还给旧版 portal 的
+      `commission-panel.tsx`（别的行业在用），这一轮的授权只到沙龙那几页。
+      已经存了超过两档的师傅照样读得出来、照样算得对，新上限只挡「从这支
+      编辑器再加第三档」。35/35 真登入过，截图看过「+ Add a band」在两档
+      就灰了
 - [ ] **⑤ Stock 进货单流程收窄** —— 草稿 PO → WhatsApp PO → 分批到货那一整条
       收窄（`stock/purchase-panel.tsx` 619 行），⚠️ 这一页有 46 条既有真登入
       覆盖（`shoot-stock-real.mjs`），改动要仔细核对哪些还成立
