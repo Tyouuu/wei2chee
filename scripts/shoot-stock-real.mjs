@@ -173,7 +173,7 @@ try {
   check("🔴 草稿里只有真的快没了那一件（Bleach Tub 库存 1 ≤ 补货线 3），健康的洗发水没有被塞进来", (await page.getByTestId("po-line").count()) === 1 && /Stock-Test Bleach Tub/.test(await page.getByTestId("po-line").innerText()), await page.getByTestId("po-line").allInnerTexts().then((a) => a.join("|")));
   check("🔴 数量预填一次补货线的量（3），价钱预填他记的成本（RM 426.00 = 3 × 142）", (await page.getByTestId("po-qty").innerText()) === "3" && /RM\s*426\.00/.test(await page.getByTestId("po-total").innerText()));
   check("🔴 还没有任何供应商：直接摆出「新供应商」两格，而且 WhatsApp 那颗按钮是灰的，旁边讲为什么", (await page.getByLabel("New supplier name").count()) === 1 && (await page.getByRole("button", { name: /Send WhatsApp PO to Supplier/ }).isDisabled()) && (await page.getByTestId("po-no-whatsapp").count()) === 1);
-  check("🔴 「Above reorder level」是真的算出来的：两件有补货线的里 1 件在线上（1 of 2 · 50%）", /1 of 2\s*·\s*50%/.test(await page.getByTestId("po-par").innerText()));
+  check("🔴 简化案（任务428 第 5 件）：「Above reorder level」那条进度条砍掉了——跟左边表格每一行自己的状态标签重复，纯装饰", (await page.getByTestId("po-par").count()) === 0);
   check("路上没有货：写「Nothing is on the way.」", /Nothing is on the way/.test(side));
   await page.screenshot({ path: `${OUT}/3-purchase-panel.png`, fullPage: true });
 
@@ -283,7 +283,6 @@ try {
   const bleachRow = await page.locator("tr", { hasText: "Stock-Test Bleach Tub" }).innerText();
   const towelRow = await page.locator("tr", { hasText: "Stock-Test Towel" }).innerText();
   check("🔴 Bleach Tub 收齐了：「On order」标签不见，数字变成 4 tub；毛巾那张还在路上，标签还在", !/On order/i.test(bleachRow) && /4 tub/.test(bleachRow) && /On order/i.test(towelRow), bleachRow + " || " + towelRow);
-  check("🔴 「Above reorder level」跟着变：2 of 2 · 100%", /2 of 2\s*·\s*100%/.test(await page.getByTestId("po-par").innerText()));
   await page.screenshot({ path: `${OUT}/7-after-receipt.png`, fullPage: true });
   check("🔴 整个过程一个 alert() 都没弹", alerts.length === 0, alerts.join(" | "));
 

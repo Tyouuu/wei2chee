@@ -44,6 +44,20 @@ import type { StockRow } from "./stock-table";
  * - "Par compliance" is "above reorder level": there is no par field, only
  *   the reorder level.
  * - WhatsApp opens a message that is already written; nothing is sent by us.
+ *
+ * ── Simplification pass (founder-tasks 任务428, cut order item 5) ───────
+ * Read the whole flow again against his words (don't chase big-SaaS
+ * complexity, keep it something anyone can pick up) and against the stock
+ * table on the left, row by row. Most of what's here answers a real
+ * question a small salon owner asks (what's low, who do I order from, what
+ * did I pay last time, what showed up) -- not invented. The one piece that
+ * was pure decoration: a bottom-of-panel "Above reorder level X of Y · Z%"
+ * progress bar that repeated, as one aggregate number, exactly what the
+ * stock table's own In Stock / Low / Deficit tags already say per row. Cut.
+ * Manual "add another item" and per-line partial receiving stay -- a shop
+ * that needs ten tubes and gets eight today is the common case this product
+ * is built for, and ordering something that isn't low yet (bulk, seasonal)
+ * is a real thing an owner does, not a feature nobody asked for.
  */
 
 export type SupplierRow = { id: string; name: string; whatsapp: string };
@@ -311,10 +325,6 @@ export function PurchasePanel({
     setOpenId(null);
     router.refresh();
   };
-
-  const withLevel = rows.filter((r) => r.reorderAt != null);
-  const above = withLevel.filter((r) => r.onHand > (r.reorderAt ?? 0)).length;
-  const pct = withLevel.length ? Math.round((above / withLevel.length) * 100) : 0;
 
   return (
     <>
@@ -597,20 +607,6 @@ export function PurchasePanel({
                 </div>
               );
             })}
-          </div>
-        )}
-
-        {withLevel.length > 0 && (
-          <div className="pt-2 border-t border-[#e8e8ec] flex flex-col gap-1.5">
-            <div className="flex items-center justify-between text-[11.5px]">
-              <span className="text-[#77767b] uppercase text-[11px]">Above reorder level</span>
-              <span data-testid="po-par" className="font-mono font-bold text-[#1a1c1f] text-[12px]">
-                {above} of {withLevel.length} · {pct}%
-              </span>
-            </div>
-            <div className="w-full h-1.5 bg-[#e8e8ec] rounded-full overflow-hidden flex">
-              <div className="bg-[#000000] h-full" style={{ width: `${pct}%` }} />
-            </div>
           </div>
         )}
       </div>
