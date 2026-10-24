@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { SalonSidebar } from "../salon-shell";
 import { FIELD, LABEL, sentence } from "../side-panel";
-import { BranchesTab, TeamTab, type BranchRow, type MemberRow } from "./settings-people";
+import { TeamTab, type BranchRow, type MemberRow } from "./settings-people";
 
 export type { BranchRow, MemberRow } from "./settings-people";
 
@@ -18,8 +18,14 @@ export type { BranchRow, MemberRow } from "./settings-people";
  *   - FIELDS (General, Booking & Loyalty): you change them, and Save Configuration
  *     writes only what changed, each through its own database call. A failure in one
  *     does not undo the others, and says which one failed.
- *   - LISTS (Branch Locations, Team & Access): each row has its own button that acts
- *     at once. Adding a person is not a draft.
+ *   - LISTS (Team & Access): each row has its own button that acts at once.
+ *     Adding a person is not a draft.
+ *
+ * Branch Locations was removed from this page (founder's call, 2026-10):
+ * a single-location salon never touched it, and nothing else on these
+ * fourteen pages reads branch_id yet. The table and `add_branch` /
+ * `set_branch_active` are untouched -- if a multi-location salon shows
+ * up, this is a UI decision to reverse, not a database one to rebuild.
  */
 
 export type SettingsValues = {
@@ -35,7 +41,7 @@ export type SettingsValues = {
   stampsNeeded: string;
 };
 
-type Tab = "general" | "branches" | "team" | "rules";
+type Tab = "general" | "team" | "rules";
 type Errors = Partial<Record<"name" | "slug" | "pages" | "booking" | "loyalty", string>>;
 
 const CARD = "bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm";
@@ -256,12 +262,9 @@ export function SettingsClient({
   }, []);
 
   const shownName = (form?.businessName || base?.businessName || "").trim();
-  const primaryBranch = branches.find((b) => b.active)?.name ?? shownName;
-  const openCount = branches.filter((b) => b.active).length;
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "general", label: "General" },
-    { key: "branches", label: `Branch Locations (${branches.length})` },
     { key: "team", label: `Team & Access (${members.length + 1})` },
     { key: "rules", label: "Booking & Loyalty" },
   ];
@@ -302,16 +305,9 @@ export function SettingsClient({
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <div className="flex flex-wrap items-center gap-3">
-                        <h1 className="text-[20px] leading-7 tracking-[-0.015em] font-semibold text-[#1a1c1f]">Store Settings &amp; Multi-Branch Tenant</h1>
-                        {primaryBranch && (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1a9a4d]/10 px-2.5 py-0.5 text-[11.5px] font-medium text-[#1a9a4d]">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#1a9a4d]" />
-                            {primaryBranch}
-                            {openCount > 1 ? ` · ${openCount} branches open` : ""}
-                          </span>
-                        )}
+                        <h1 className="text-[20px] leading-7 tracking-[-0.015em] font-semibold text-[#1a1c1f]">Store Settings</h1>
                       </div>
-                      <p className="mt-1 text-[13.5px] leading-5 text-[#5e5e67]">Manage the store&apos;s identity, branches, who works here, and the rules the schedule and the till follow.</p>
+                      <p className="mt-1 text-[13.5px] leading-5 text-[#5e5e67]">Manage the store&apos;s identity, who works here, and the rules the schedule and the till follow.</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <div
@@ -477,8 +473,6 @@ export function SettingsClient({
                     </div>
                   </>
                 )}
-
-                {tab === "branches" && <BranchesTab projectId={projectId} branches={branches} />}
 
                 {tab === "team" && <TeamTab ownerEmail={ownerEmail} members={members} />}
 

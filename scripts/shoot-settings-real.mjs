@@ -116,7 +116,9 @@ try {
   console.log("\nA 打开");
   await go();
   check("🔴 侧栏「Tenant Settings」是一条真的连结，而且是亮着的这一行", (await page.locator("aside a[href='/en/salon-preview/settings']").count()) === 1);
-  check("标题跟四个分页签（不画 WhatsApp 跟硬件那两个：底下没有东西）", /Store Settings/.test(await page.locator("h1").innerText()) && (await page.getByRole("tab").count()) === 4 && (await tab("General").getAttribute("aria-selected")) === "true", await page.getByRole("tab").allInnerTexts().then((a) => a.join("|")));
+  // 分页签从 4 降到 3（任务426 简化案：Branch Locations 整个拿掉，General ·
+  // Team & Access · Booking & Loyalty 三个还在；WhatsApp/硬件两个本来就没画）。
+  check("标题跟三个分页签（General · Team & Access · Booking & Loyalty）", /Store Settings/.test(await page.locator("h1").innerText()) && (await page.getByRole("tab").count()) === 3 && (await tab("General").getAttribute("aria-selected")) === "true", await page.getByRole("tab").allInnerTexts().then((a) => a.join("|")));
   check("一开始是「All changes saved」，保存键是灰的", /All changes saved/.test(await state()) && (await saveTop().isDisabled()));
   check("🔴 店名 · 老板名是真的读回来的", (await page.getByLabel("Brand name").inputValue()) === "Kedai Test Salon" && (await page.getByLabel("Owner name").inputValue()) === "Amy Owner");
   const p0 = await project();
@@ -124,7 +126,8 @@ try {
   check("🔴 还没发布：写「Not published yet」", /Not published yet/.test(await page.getByTestId("settings-site-state").innerText()));
   check("币别 · 一天怎么算是读出来的事实，不是开关", /MYR/.test(await page.locator("body").innerText()) && /UTC\+8/.test(await page.locator("body").innerText()));
   check("三个页的开关都是开的（这家有预约 · 库存 · 师傅三页）", (await page.getByRole("switch").evaluateAll((els) => els.map((e) => e.getAttribute("aria-checked")))).join() === "true,true,true");
-  check("头上那颗绿药丸写着店名（还没有分店）", /Kedai Test Salon/.test(await page.locator("h1").locator("xpath=following::span[contains(@class,'rounded-full')][1]").innerText().catch(() => "")));
+  // 那颗绿药丸（店名旁边的分店徽章）是 Branch Locations 的一部分，已经跟着
+  // 那个分页一起拿掉（任务426）——标题现在只是一行朴素的 "Store Settings"。
   await page.screenshot({ path: `${OUT}/1-general.png`, fullPage: true });
 
   // ═══ B 改店名 ═══
@@ -251,33 +254,9 @@ try {
   await page.getByRole("button", { name: "Hide Slip Sample" }).click();
   check("再按一次收起来", (await page.getByTestId("settings-slip").count()) === 0);
 
-  // ═══ G 分店 ═══
-  console.log("\nG 分店");
-  await tab(/Branch Locations/).click();
-  check("没有分店：讲「This shop is one location」", await page.getByTestId("settings-branches-empty").isVisible());
-  await page.getByRole("button", { name: "Add Branch" }).click();
-  check("名字空着，「Add」是灰的", await page.getByRole("button", { name: "Add", exact: true }).isDisabled());
-  await page.getByLabel("Branch name").fill("Bangsar");
-  await page.getByRole("button", { name: "Add", exact: true }).click();
-  await until(async () => (await page.getByTestId("settings-branch").count()) === 1);
-  check("🔴 加了一间：卡片出现，B1，Open，库里真的有", (await page.getByTestId("settings-branch").count()) === 1 && /B1/.test(await page.getByTestId("settings-branch").first().innerText()) && /Open/.test(await page.getByTestId("settings-branch").first().innerText()) && (await branchRows()).length === 1);
-  check("头上药丸换成分店名，分页签写「(1)」", /Bangsar/.test(await page.locator("h1").locator("xpath=following::span[contains(@class,'rounded-full')][1]").innerText().catch(() => "")) && (await tab(/Branch Locations/).innerText()).includes("(1)"));
-  await page.getByRole("button", { name: "Add Branch" }).click();
-  await page.getByLabel("Branch name").fill("Bangsar");
-  await page.getByRole("button", { name: "Add", exact: true }).click();
-  await until(async () => (await page.getByTestId("settings-branch-note").count()) === 1);
-  check("🔴 同名再加一次：讲「You already have a branch called」，库里还是一间", /already have a branch called "Bangsar"/.test(await page.getByTestId("settings-branch-note").innerText()) && (await branchRows()).length === 1);
-  await page.getByLabel("Branch name").fill("Puchong");
-  await page.getByRole("button", { name: "Add", exact: true }).click();
-  await until(async () => (await page.getByTestId("settings-branch").count()) === 2);
-  check("第二间进来了，头上写「2 branches open」", (await page.getByTestId("settings-branch").count()) === 2 && /2 branches open/.test(await page.locator("h1").locator("xpath=following::span[contains(@class,'rounded-full')][1]").innerText().catch(() => "")));
-  await page.getByRole("button", { name: "Close Puchong" }).click();
-  await until(async () => (await branchRows()).find((b) => b.name === "Puchong")?.active === false);
-  check("🔴 关掉 Puchong：库里 active = false（不是删掉），卡片写 Closed，按钮变「Reopen」", (await branchRows()).length === 2 && (await until(async () => /Closed/.test(await page.getByTestId("settings-branch").nth(1).innerText()) && (await page.getByRole("button", { name: "Reopen Puchong" }).count()) === 1)));
-  await page.getByRole("button", { name: "Reopen Puchong" }).click();
-  await until(async () => (await branchRows()).find((b) => b.name === "Puchong")?.active === true);
-  check("开回来", (await branchRows()).find((b) => b.name === "Puchong")?.active === true);
-  await page.screenshot({ path: `${OUT}/5-branches.png`, fullPage: true });
+  // ═══ G 分店 ═══ 拿掉了（founder's call, 2026-10）：Branch Locations 的 UI 从
+  // Settings 页撤下，一间单店沙龙从来没用过它。`branchRows()` 跟 `add_branch`
+  // 的安全检查留着（下面 I 段），资料库那一层一个字没动。
 
   // ═══ H 团队 ═══
   console.log("\nH 谁在这里做事");
@@ -341,7 +320,7 @@ try {
   const sb = await staffApi.rpc("set_booking_rules", { in_project_id: pid, in_no_show_deposit_after: 1, in_default_deposit_cents: 100 });
   const sbr = await staffApi.rpc("add_branch", { in_project_id: pid, in_name: "Sneaky" });
   const sl = await staffApi.rpc("set_loyalty_rule", { in_project_id: pid, in_stamps_needed: 3 });
-  check("🔴 员工自己直接打资料库也写不进去（订金规矩 · 开分店 · 集点都被拒）", !!sb.error && !!sbr.error && !!sl.error && (await bookingRow())?.no_show_deposit_after === null && (await branchRows()).length === 2, JSON.stringify([sb.error?.message, sbr.error?.message, sl.error?.message]));
+  check("🔴 员工自己直接打资料库也写不进去（订金规矩 · 开分店 · 集点都被拒）——UI 没有这个入口了，但 RPC 自己还是要挡", !!sb.error && !!sbr.error && !!sl.error && (await bookingRow())?.no_show_deposit_after === null && (await branchRows()).length === 0, JSON.stringify([sb.error?.message, sbr.error?.message, sl.error?.message]));
 
   check("🔴 整个过程一个 alert() 都没弹", alerts === 0, String(alerts));
 } finally {
