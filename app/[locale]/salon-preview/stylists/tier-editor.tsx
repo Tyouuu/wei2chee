@@ -21,6 +21,20 @@ import type { CommissionTier } from "./stylist-client";
  *   set_commission_tiers   the one write; it also records which set applies
  *                   from which date
  *
+ * ── Simplification pass (founder-tasks 任务428, cut order item 4) ───────
+ * His words: don't chase big-SaaS complexity, build something anyone can
+ * pick up. A 2-3 person salon's own commission talk is "she gets 10%" or
+ * "15% past the first RM 500" -- one band, or two. Six bands is a
+ * franchise-payroll shape nobody here asked for, so THIS editor caps
+ * "+ Add a band" at two.
+ *
+ * `tierProblems()`'s own six-band ceiling in lib/portal/commission.ts is
+ * left alone on purpose: that file is shared with the old portal's
+ * commission-panel.tsx, which other trades still use, and this pass only
+ * has authorization to simplify the salon pages. If a stylist somehow
+ * already has more than two saved bands (set from elsewhere), they still
+ * render and still work -- the cap only stops adding a third from here.
+ *
  * ── The one thing that must not be pre-filled: "in force from" ──────────
  * A rate change saved today starts NEXT month, so the rate already paid for
  * this month does not move under him. The box is empty on purpose -- a
@@ -36,9 +50,14 @@ const ENGLISH = {
 };
 const PROBLEMS = {
   duplicate: "Two bands cannot start at the same figure.",
+  // Unreachable from this editor today (the "+ Add a band" button stops at
+  // two), but tierProblems() itself still only flags past six -- left as is
+  // so a stylist who already has more than two saved bands doesn't hit a
+  // mismatched error message just for opening the editor.
   tooMany: "Six bands at most. Past that, nobody can follow which one they are in.",
   badPercent: "The rate has to be between 0 and 100.",
 };
+const MAX_BANDS = 2;
 
 type Row = { from: string; percent: string };
 
@@ -145,7 +164,7 @@ export function TierEditor({
 
       <button
         type="button"
-        disabled={rows.length >= 6}
+        disabled={rows.length >= MAX_BANDS}
         onClick={() => setRows((p) => [...p, { from: "", percent: "" }])}
         className="self-start h-8 px-3 rounded-lg border border-[#c8c5cb]/60 hover:bg-[#f3f3f7] text-[12.5px] font-medium text-[#1a1c1f] disabled:opacity-40"
       >

@@ -220,8 +220,9 @@ try {
   await editor.getByLabel("From 2").fill("500");
   await editor.getByLabel("Rate 2").fill("150");
   check("🔴 比例 150：讲一句「要在 0 到 100 之间」，存不了", /between 0 and 100/.test(await editor.getByTestId("tier-problem").innerText()) && (await editor.getByRole("button", { name: "Save Brackets" }).isDisabled()));
-  for (let i = 0; i < 4; i += 1) await editor.getByRole("button", { name: "+ Add a band" }).click();
-  check("🔴 加到六档：「+ Add a band」灰掉（最多六档，再多没有人算得清）", (await editor.getByLabel(/^From \d$/).count()) === 6 && (await editor.getByRole("button", { name: "+ Add a band" }).isDisabled()));
+  // 简化案（任务428 第 4 件）：这支编辑器从 6 档窄成 2 档 —— Jasmine 本来就
+  // 有两档，所以「+ Add a band」从打开编辑器那一刻就该是灰的,不用再点上去。
+  check("🔴 本来就两档：「+ Add a band」从打开那一刻就是灰的（最多两档，三五人的店不用六档）", (await editor.getByLabel(/^From \d$/).count()) === 2 && (await editor.getByRole("button", { name: "+ Add a band" }).isDisabled()));
   await ownerPage.screenshot({ path: `${OUT}/1b-tier-editor.png`, fullPage: true });
   await editor.getByRole("button", { name: "Cancel" }).click();
   check("🔴 Cancel：编辑器收起，资料库一点没动（还是 0 → 15%、500 → 25%）", (await ownerPage.getByTestId("tier-editor").count()) === 0 && JSON.stringify((await tiersOf(jasmine.data.id)).map((t) => [Number(t.from_cents), Number(t.percent)])) === JSON.stringify([[0, 15], [50000, 25]]));
@@ -293,6 +294,11 @@ try {
   await amyEditor.waitFor();
   check("🔴 没有阶梯的师傅：编辑器只有一档，「From」是 0，比例是空的（不预填一个建议）", (await amyEditor.getByLabel(/^From \d$/).count()) === 1 && (await amyEditor.getByLabel("From 1").inputValue()) === "0" && (await amyEditor.getByLabel("Rate 1").inputValue()) === "");
   check("🔴 一份比例都还没有的师傅：讲明「这些比例从现在起算」（没有旧的可以「照旧」，不讲「下个月才开始」）", /apply from now/i.test(await amyEditor.getByTestId("tier-start-note").innerText()), await amyEditor.getByTestId("tier-start-note").innerText());
+  check("只有一档的时候「+ Add a band」还按得动（两档以内）", await amyEditor.getByRole("button", { name: "+ Add a band" }).isEnabled());
+  await amyEditor.getByRole("button", { name: "+ Add a band" }).click();
+  check("🔴 加到两档就灰掉了（不是六档）", (await amyEditor.getByLabel(/^From \d$/).count()) === 2 && (await amyEditor.getByRole("button", { name: "+ Add a band" }).isDisabled()));
+  await amyEditor.getByRole("button", { name: "Remove band 2" }).click();
+  check("拿掉第二档，回到一档，「+ Add a band」又按得动了", (await amyEditor.getByLabel(/^From \d$/).count()) === 1 && (await amyEditor.getByRole("button", { name: "+ Add a band" }).isEnabled()));
   await amyEditor.getByLabel("Rate 1").fill("10");
   await amyEditor.getByRole("button", { name: "Save Brackets" }).click();
   await until(async () => (await tiersOf(plain.data.id)).length === 1);
