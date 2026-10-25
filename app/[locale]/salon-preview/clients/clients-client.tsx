@@ -300,8 +300,11 @@ export function ClientsClient({
                     )}
                   </div>
 
-                  {/* Client stream */}
-                  <div className="flex flex-col gap-2 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
+                  {/* Client stream -- more room per row (p-3 not p-2, gap-2.5
+                      not gap-2): stacked bordered cards with no breathing
+                      room between them is what reads as "crowded", even
+                      though nothing overflows. */}
+                  <div className="flex flex-col gap-2.5 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
                     {pageClients.length === 0 && (
                       <div className="bg-[#ffffff] rounded-xl p-4 border border-[#eeedf1] shadow-sm text-center text-[13px] text-[#77767b]">
                         {clients.length === 0
@@ -318,13 +321,13 @@ export function ClientsClient({
                           id={firstOfLetterIds.has(c.id) ? `client-row-${letter}` : undefined}
                           onClick={() => setSelectedId(c.id)}
                           className={
-                            "bg-[#ffffff] rounded-xl p-2 relative overflow-hidden transition-all shadow-sm cursor-pointer " +
+                            "bg-[#ffffff] rounded-xl p-3 relative overflow-hidden transition-all shadow-sm cursor-pointer " +
                             (active ? "border-2 border-[#000000]" : "border border-[#eeedf1] hover:bg-[#f3f3f7]/60")
                           }
                         >
                           {active && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#000000]" />}
-                          <div className={"flex items-start justify-between gap-2 " + (active ? "pl-1" : "")}>
-                            <div className="flex items-start gap-2.5 min-w-0">
+                          <div className={"flex items-start justify-between gap-2.5 " + (active ? "pl-1" : "")}>
+                            <div className="flex items-start gap-3 min-w-0">
                               <div
                                 className={
                                   "w-9 h-9 rounded-full flex items-center justify-center text-[11.5px] font-semibold shrink-0 " +
@@ -333,7 +336,7 @@ export function ClientsClient({
                               >
                                 {c.initials}
                               </div>
-                              <div className="flex flex-col min-w-0">
+                              <div className="flex flex-col min-w-0 gap-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="font-semibold text-[#1a1c1f] text-[14px] truncate">{c.name}</span>
                                   {c.status && (
@@ -347,7 +350,7 @@ export function ClientsClient({
                                     </span>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-2 mt-0.5 font-mono text-[11.5px] text-[#77767b]">
+                                <div className="flex items-center gap-2 font-mono text-[11.5px] text-[#77767b]">
                                   {c.phone ? (
                                     <span className="flex items-center gap-0.5">
                                       <span className="material-symbols-outlined text-[12px] text-[#5e5e67]">call</span>
@@ -369,7 +372,7 @@ export function ClientsClient({
                               <span className="font-mono text-[10.5px] text-[#77767b]">{c.lastOn ? shortDate(c.lastOn) : "No visits"}</span>
                             </div>
                           </div>
-                          <div className={"mt-2 pt-1 flex items-center justify-between text-[11.5px] border-t border-[#eeedf1] " + (active ? "pl-1" : "")}>
+                          <div className={"mt-2.5 pt-2 flex items-center justify-between text-[11.5px] border-t border-[#eeedf1] " + (active ? "pl-1" : "")}>
                             <span className="text-[11px] text-[#47464b] font-mono">
                               {c.visits} visit{c.visits === 1 ? "" : "s"}
                               {c.activePackages.length > 0 ? ` · ${c.activePackages[0].sessionsLeft}/${c.activePackages[0].sessionsTotal} sessions left` : ""}
