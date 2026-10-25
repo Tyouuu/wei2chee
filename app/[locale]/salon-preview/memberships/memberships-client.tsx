@@ -237,7 +237,7 @@ export function MembershipsClient({ canSeeMoney, data }: { canSeeMoney: boolean;
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#e4e4e7] pb-6">
               <div>
-                <h1 className="text-2xl font-semibold tracking-tight text-[#09090b]">Memberships &amp; VIP Passes</h1>
+                <h1 className="text-[20px] leading-7 tracking-[-0.015em] font-semibold text-[#09090b]">Memberships &amp; VIP Passes</h1>
                 <p className="text-xs text-[#71717a] mt-1">
                   Manage recurring client subscriptions and collect each month&apos;s fee.
                 </p>
