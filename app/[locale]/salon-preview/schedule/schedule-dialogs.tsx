@@ -67,6 +67,7 @@ export function BookingSheet({
   // A slot picked from the week carries its own day.
   const date = prefill?.date ?? dateStr;
   const [clientQuery, setClientQuery] = useState("");
+  const [clientFocused, setClientFocused] = useState(false);
   const [partyId, setPartyId] = useState<string | null>(null);
   const [saveAsClient, setSaveAsClient] = useState(false);
   const [contact, setContact] = useState("");
@@ -81,11 +82,16 @@ export function BookingSheet({
   // One key per opening of this panel: a double press books once.
   const key = useRef<string | null>(null);
 
+  // Browsable like the Stylist <select>: focusing it shows the whole list,
+  // typing narrows it. Not a real <select> because picking "none of these"
+  // (a walk-in, or a name worth saving as a new client) has to stay possible.
   const suggestions = useMemo(() => {
+    if (partyId) return [];
     const q = clientQuery.trim().toLowerCase();
-    if (!q || partyId) return [];
-    return customers.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 6);
+    const pool = q ? customers.filter((c) => c.name.toLowerCase().includes(q)) : customers;
+    return pool.slice(0, 8);
   }, [clientQuery, partyId, customers]);
+  const showDropdown = clientFocused && !partyId && suggestions.length > 0;
 
   const length = duration(start, end);
   const dayHeading = date === dateStr ? dayLabel : new Intl.DateTimeFormat("en-MY", { timeZone: "UTC", weekday: "long", day: "numeric", month: "short", year: "numeric" }).format(new Date(`${date}T00:00:00Z`));
@@ -176,22 +182,30 @@ export function BookingSheet({
         </p>
       ) : (
         <>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5 relative">
             <span className={LABEL}>Client</span>
-            <input
-              type="text"
-              aria-label="Client"
-              value={clientQuery}
-              onChange={(e) => {
-                setClientQuery(e.target.value);
-                setPartyId(null);
-                setError(null);
-              }}
-              placeholder="Search a saved client, or type a name"
-              className={FIELD}
-            />
-            {suggestions.length > 0 && (
-              <div className="rounded-lg border border-[#c8c5cb]/50 bg-[#ffffff] shadow-md overflow-hidden">
+            <div className="relative">
+              <input
+                type="text"
+                aria-label="Client"
+                value={clientQuery}
+                onChange={(e) => {
+                  setClientQuery(e.target.value);
+                  setPartyId(null);
+                  setError(null);
+                }}
+                onFocus={() => setClientFocused(true)}
+                // Delay so a click on a suggestion registers before the list hides.
+                onBlur={() => setTimeout(() => setClientFocused(false), 150)}
+                placeholder="Pick a saved client, or type a new name"
+                className={FIELD + " pr-8"}
+              />
+              <span className="material-symbols-outlined text-[18px] text-[#5e5e67] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                {showDropdown ? "arrow_drop_up" : "arrow_drop_down"}
+              </span>
+            </div>
+            {showDropdown && (
+              <div className="absolute left-0 top-[52px] w-full rounded-lg border border-[#c8c5cb]/50 bg-[#ffffff] shadow-md overflow-hidden z-10 max-h-56 overflow-y-auto">
                 {suggestions.map((c) => (
                   <button
                     key={c.id}
@@ -200,6 +214,7 @@ export function BookingSheet({
                       setClientQuery(c.name);
                       setPartyId(c.id);
                       setError(null);
+                      setClientFocused(false);
                     }}
                     className="w-full text-left px-3 py-2 text-[13px] hover:bg-[#f3f3f7] border-b border-[#e8e8ec] last:border-b-0"
                   >

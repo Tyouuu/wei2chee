@@ -3,16 +3,22 @@
 import { useEffect, type ReactNode } from "react";
 
 /**
- * The right-hand panel every salon page opens for "do something to this one
- * thing" (Task 415 / 416): a new appointment, a new client, editing a
- * profile, using a package session.
+ * The panel every salon page opens for "do something to this one thing"
+ * (Task 415 / 416): a new appointment, a new client, editing a profile,
+ * using a package session.
  *
- * Fresha, Mangomint and Vagaro all do this from the side rather than from a
- * centred pop-up, so the page underneath stays in view -- you can still see
- * the free stretch you are filling, or the folio you are editing. Kept in one
- * place so every panel has the same edges, the same close button and the same
- * Escape behaviour; the Schedule panels and the Clients panels both import
- * this instead of each drawing their own.
+ * Desktop (md+): a centred modal with a scrim -- per Task 439 (2026-10-25,
+ * a global rule, not a per-page choice), every edit/add form on desktop
+ * uses this shape, not a side drawer. The earlier version here was a
+ * right-hand drawer copied from Fresha/Mangomint/Vagaro; he overruled that
+ * directly, so this isn't re-researched, just changed.
+ *
+ * Phone widths keep the bottom sheet (out of scope -- he's designing mobile
+ * himself) -- only the md: overrides changed.
+ *
+ * Kept in one place so every panel has the same edges, the same close
+ * button and the same Escape behaviour; the Schedule, Clients and Lookbook
+ * panels all import this instead of each drawing their own.
  */
 
 export const LABEL = "text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67]";
@@ -51,17 +57,21 @@ export function Sheet({
   }, [busy, onClose]);
 
   return (
-    // A very light scrim: clicking outside closes, but the page stays readable.
-    <div className="fixed inset-0 z-[60] bg-black/10" onClick={() => !busy && onClose()}>
+    // Phones: a very light scrim, the sheet rises from the bottom. Desktop:
+    // a real scrim behind a centred card (Task 439 -- global, not per-page).
+    <div
+      className="fixed inset-0 z-[60] bg-black/10 md:flex md:items-center md:justify-center md:bg-black/40 md:p-4"
+      onClick={() => !busy && onClose()}
+    >
       <aside
         role="dialog"
+        aria-modal="true"
         aria-label={label}
         onClick={(e) => e.stopPropagation()}
-        // Wide screens: a full-height drawer on the right. Phones: a sheet that
-        // rises from the bottom and is only as tall as its form (with a scroll
-        // when the form is long) -- a full-height drawer for a three-field
-        // form is a screen of empty white.
-        className="absolute inset-x-0 bottom-0 max-h-[88vh] rounded-t-2xl border-t border-[#c8c5cb]/40 bg-[#ffffff] shadow-2xl flex flex-col md:inset-x-auto md:right-0 md:top-0 md:h-full md:max-h-none md:w-full md:max-w-[420px] md:rounded-none md:border-t-0 md:border-l"
+        // Phones: a sheet that rises from the bottom and is only as tall as
+        // its form (with a scroll when the form is long). Desktop: a
+        // centred modal, not anchored to any edge.
+        className="absolute inset-x-0 bottom-0 max-h-[88vh] rounded-t-2xl border-t border-[#c8c5cb]/40 bg-[#ffffff] shadow-2xl flex flex-col md:static md:max-h-[85vh] md:w-full md:max-w-[460px] md:rounded-2xl md:border md:border-[#c8c5cb]/30 md:shadow-xl"
       >
         <div aria-hidden className="md:hidden mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[#c8c5cb]" />
         <div className="px-5 py-4 border-b border-[#c8c5cb]/30 flex items-start justify-between gap-3">
