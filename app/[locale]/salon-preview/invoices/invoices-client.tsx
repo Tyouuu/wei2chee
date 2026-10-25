@@ -53,6 +53,11 @@ function ringgit(cents: number): string {
 
 type PrintState = "idle" | "spooling" | "dispatched";
 
+/* 一次只摆这么多行，往下滚才多拿一截——跟改动记录页同一条规矩（任务434
+   实拍量过：50 张不分页、右边打印预览底下是一大片空白）。真的按一次
+   多显示 20 行，不是一颗翻不了页的装饰按钮。 */
+const PAGE_SIZE = 20;
+
 export function InvoicesClient({
   invoices,
   businessName,
@@ -64,13 +69,25 @@ export function InvoicesClient({
   const [printState, setPrintState] = useState<PrintState>("idle");
   const [formatTab, setFormatTab] = useState<"thermal" | "a4">("thermal");
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | "all">("all");
+  const [staffFilter, setStaffFilter] = useState<string | "all">("all");
   const [search, setSearch] = useState("");
+  const [shown, setShown] = useState(PAGE_SIZE);
 
   const settledCount = invoices.filter((i) => i.status === "settled").length;
   const refundedCount = invoices.filter((i) => i.status === "refunded").length;
 
-  const visibleInvoices = invoices.filter((inv) => {
+  // 哪几位师傅收过款——按次数排，没有记师傅的（"—"）不进这份清单，
+  // 不然筛选里会多一个选了也等於没筛的选项。
+  const staffCounts = Array.from(
+    invoices.reduce((m, i) => {
+      if (!i.staffName) return m;
+      return m.set(i.staffName, (m.get(i.staffName) ?? 0) + 1);
+    }, new Map<string, number>()),
+  ).sort((a, b) => b[1] - a[1]);
+
+  const filteredInvoices = invoices.filter((inv) => {
     if (statusFilter !== "all" && inv.status !== statusFilter) return false;
+    if (staffFilter !== "all" && inv.staffName !== staffFilter) return false;
     const q = search.trim().toLowerCase();
     if (!q) return true;
     return (
@@ -79,6 +96,13 @@ export function InvoicesClient({
       (inv.phone ?? "").toLowerCase().includes(q)
     );
   });
+  const visibleInvoices = filteredInvoices.slice(0, shown);
+
+  // 换筛选条件要退回第一页，理由跟改动记录页同一条：不然切到一个只有
+  // 5 张的筛选，画面却还记得着上一个筛选翻开的第 40 张。
+  const setStatus = (s: InvoiceStatus | "all") => { setStatusFilter(s); setShown(PAGE_SIZE); };
+  const setStaff = (s: string) => { setStaffFilter(s); setShown(PAGE_SIZE); };
+  const setQuery = (v: string) => { setSearch(v); setShown(PAGE_SIZE); };
 
   const selected = invoices.find((i) => i.id === selectedId) ?? null;
 
@@ -122,9 +146,25 @@ export function InvoicesClient({
                 placeholder="Search invoice #, guest name, or phone..."
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => setQuery(e.target.value)}
               />
             </div>
+            {/* 只有一位师傅在收款的店，这格筛不出什么，不画。 */}
+            {staffCounts.length > 1 && (
+              <select
+                aria-label="Filter by stylist"
+                value={staffFilter}
+                onChange={(e) => setStaff(e.target.value)}
+                className="h-9 px-2.5 rounded border border-[#e2e2e6] bg-[#ffffff] text-[13.5px] text-[#1a1c1f] focus:outline-none focus:border-[#1a1c1f]"
+              >
+                <option value="all">All Stylists</option>
+                {staffCounts.map(([name, count]) => (
+                  <option key={name} value={name}>
+                    {name} ({count})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
             {(
@@ -136,7 +176,7 @@ export function InvoicesClient({
             ).map((f) => (
               <button
                 key={f.label}
-                onClick={() => setStatusFilter(f.status)}
+                onClick={() => setStatus(f.status)}
                 className={
                   "h-7 px-2.5 rounded text-[11.5px] leading-4 tracking-[0.06em] font-semibold tracking-wider uppercase transition-colors active:scale-[0.97] " +
                   (statusFilter === f.status
@@ -272,18 +312,31 @@ export function InvoicesClient({
               </tbody>
             </table>
           </div>
-          <div className="px-3 py-2 bg-[#ffffff] border-t border-[#e2e2e6] flex items-center justify-between gap-2">
+          <div className="px-3 py-2 bg-[#ffffff] border-t border-[#e2e2e6] flex items-center justify-between gap-3 flex-wrap">
             <span className="text-[13.5px] leading-5 text-[#5e5e67]">
               {visibleInvoices.length > 0 ? (
                 <>
                   Showing <span className="font-medium text-[#1a1c1f]">1</span> to{" "}
                   <span className="font-medium text-[#1a1c1f]">{visibleInvoices.length}</span> of{" "}
+                  <span className="font-medium text-[#1a1c1f]">{filteredInvoices.length}</span>
+                  {filteredInvoices.length !== invoices.length ? ` (filtered from ${invoices.length})` : ""}
                 </>
               ) : (
-                "Showing 0 of "
-              )}
-              <span className="font-medium text-[#1a1c1f]">{invoices.length}</span> Invoices
+                <>
+                  Showing <span className="font-medium text-[#1a1c1f]">0</span> of{" "}
+                  <span className="font-medium text-[#1a1c1f]">{invoices.length}</span>
+                </>
+              )}{" "}
+              Invoices
             </span>
+            {filteredInvoices.length > shown && (
+              <button
+                onClick={() => setShown((n) => n + PAGE_SIZE)}
+                className="h-7 px-3 rounded text-[12px] font-medium bg-[#f3f3f7] border border-[#e2e2e6] text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] transition-all"
+              >
+                Show {Math.min(PAGE_SIZE, filteredInvoices.length - shown)} more ({filteredInvoices.length - shown} left)
+              </button>
+            )}
           </div>
         </div>
       </div>

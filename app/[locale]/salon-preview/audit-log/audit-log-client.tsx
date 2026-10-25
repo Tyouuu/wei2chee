@@ -51,14 +51,23 @@ const ENTITY_LABEL: Record<ActivityRow["entity"], string> = {
   appointment: "Appointment",
 };
 
+/* 一次只摆这么多行，往下滚才多拿一截——真的按一次多显示 20 行，不是一颗
+   按不下去的装饰品（这个仓库禁得最严的那一条）。六十条今天看得完，
+   往后天天记每一笔状态变化只会越堆越长，这不是"以后会变长"，是现在已经
+   长了（实拍量过：改动记录页今天就是 6591px 高、要滚十屏）。 */
+const PAGE_SIZE = 20;
+
 export function AuditLogClient({ rows }: { rows: ActivityRow[] }) {
   const [activeEntity, setActiveEntity] = useState<ActivityRow["entity"] | "all">("all");
+  const [activeWho, setActiveWho] = useState<string | "all">("all");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(rows[0]?.id ?? null);
+  const [shown, setShown] = useState(PAGE_SIZE);
 
   const q = search.trim().toLowerCase();
-  const visibleRows = rows.filter((r) => {
+  const filteredRows = rows.filter((r) => {
     if (activeEntity !== "all" && r.entity !== activeEntity) return false;
+    if (activeWho !== "all" && r.who !== activeWho) return false;
     if (!q) return true;
     return (
       r.label.toLowerCase().includes(q) ||
@@ -66,6 +75,13 @@ export function AuditLogClient({ rows }: { rows: ActivityRow[] }) {
       r.field.toLowerCase().includes(q)
     );
   });
+  const visibleRows = filteredRows.slice(0, shown);
+
+  // 换筛选条件要退回第一页——不然切到一个只有 3 条的筛选，画面却记得着
+  // 上一个筛选翻开的第 60 条那个"显示到多少"，看起来像是坏了。
+  const setEntity = (e: ActivityRow["entity"] | "all") => { setActiveEntity(e); setShown(PAGE_SIZE); };
+  const setWho = (w: string) => { setActiveWho(w); setShown(PAGE_SIZE); };
+  const setQuery = (v: string) => { setSearch(v); setShown(PAGE_SIZE); };
 
   const selected = rows.find((r) => r.id === selectedId) ?? null;
 
@@ -73,6 +89,11 @@ export function AuditLogClient({ rows }: { rows: ActivityRow[] }) {
     entity: e,
     count: rows.filter((r) => r.entity === e).length,
   }));
+
+  // 谁动过改动——按次数排，常改的人排前面，不按名字字母排。
+  const whoCounts = Array.from(
+    rows.reduce((m, r) => m.set(r.who || "Unknown", (m.get(r.who || "Unknown") ?? 0) + 1), new Map<string, number>()),
+  ).sort((a, b) => b[1] - a[1]);
 
   return (
     <>
@@ -88,37 +109,56 @@ export function AuditLogClient({ rows }: { rows: ActivityRow[] }) {
               placeholder="Search record, staff name, or field..."
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              onClick={() => setActiveEntity("all")}
-              className={
-                "h-8 px-3 rounded-full text-[11.5px] leading-4 tracking-[0.04em] font-medium transition-all active:scale-[0.97] " +
-                (activeEntity === "all"
-                  ? "bg-[#000000] text-[#ffffff]"
-                  : "bg-[#ffffff] border border-[#c8c5cb] text-[#1a1c1f] hover:border-[#000000]")
-              }
-            >
-              All Activities ({rows.length})
-            </button>
-            {entityCounts
-              .filter((e) => e.count > 0)
-              .map((e) => (
-                <button
-                  key={e.entity}
-                  onClick={() => setActiveEntity(e.entity)}
-                  className={
-                    "h-8 px-3 rounded-full text-[11.5px] leading-4 tracking-[0.04em] font-medium transition-all active:scale-[0.97] " +
-                    (activeEntity === e.entity
-                      ? "bg-[#000000] text-[#ffffff]"
-                      : "bg-[#ffffff] border border-[#c8c5cb] text-[#1a1c1f] hover:border-[#000000]")
-                  }
-                >
-                  {ENTITY_LABEL[e.entity]} ({e.count})
-                </button>
-              ))}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* 谁动过——只有一个人在动系统的店，这格没有用，所以超过一个人才画。 */}
+            {whoCounts.length > 1 && (
+              <select
+                aria-label="Filter by who"
+                value={activeWho}
+                onChange={(e) => setWho(e.target.value)}
+                className="h-8 px-2.5 rounded-full text-[11.5px] leading-4 tracking-[0.04em] font-medium bg-[#ffffff] border border-[#c8c5cb] text-[#1a1c1f] focus:outline-none focus:border-[#000000]"
+              >
+                <option value="all">Everyone</option>
+                {whoCounts.map(([name, count]) => (
+                  <option key={name} value={name}>
+                    {name} ({count})
+                  </option>
+                ))}
+              </select>
+            )}
+            <div className="h-5 w-px bg-[#e8e8ec]" />
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                onClick={() => setEntity("all")}
+                className={
+                  "h-8 px-3 rounded-full text-[11.5px] leading-4 tracking-[0.04em] font-medium transition-all active:scale-[0.97] " +
+                  (activeEntity === "all"
+                    ? "bg-[#000000] text-[#ffffff]"
+                    : "bg-[#ffffff] border border-[#c8c5cb] text-[#1a1c1f] hover:border-[#000000]")
+                }
+              >
+                All Activities ({rows.length})
+              </button>
+              {entityCounts
+                .filter((e) => e.count > 0)
+                .map((e) => (
+                  <button
+                    key={e.entity}
+                    onClick={() => setEntity(e.entity)}
+                    className={
+                      "h-8 px-3 rounded-full text-[11.5px] leading-4 tracking-[0.04em] font-medium transition-all active:scale-[0.97] " +
+                      (activeEntity === e.entity
+                        ? "bg-[#000000] text-[#ffffff]"
+                        : "bg-[#ffffff] border border-[#c8c5cb] text-[#1a1c1f] hover:border-[#000000]")
+                    }
+                  >
+                    {ENTITY_LABEL[e.entity]} ({e.count})
+                  </button>
+                ))}
+            </div>
           </div>
         </div>
       </section>
@@ -135,7 +175,8 @@ export function AuditLogClient({ rows }: { rows: ActivityRow[] }) {
               </span>
             </div>
             <span className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67]">
-              Showing {visibleRows.length} of {rows.length} logged changes
+              Showing {visibleRows.length} of {filteredRows.length}
+              {filteredRows.length !== rows.length ? ` (filtered from ${rows.length})` : ""} logged changes
             </span>
           </div>
 
@@ -211,6 +252,16 @@ export function AuditLogClient({ rows }: { rows: ActivityRow[] }) {
               );
             })}
           </div>
+          {filteredRows.length > shown && (
+            <div className="p-3 border-t border-[#e8e8ec] flex justify-center">
+              <button
+                onClick={() => setShown((n) => n + PAGE_SIZE)}
+                className="h-8 px-4 rounded-full text-[11.5px] leading-4 tracking-[0.04em] font-medium bg-[#ffffff] border border-[#c8c5cb] text-[#1a1c1f] hover:border-[#000000] active:scale-[0.97] transition-all"
+              >
+                Show {Math.min(PAGE_SIZE, filteredRows.length - shown)} more ({filteredRows.length - shown} left)
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Activity Details Panel -- real, follows selection */}
