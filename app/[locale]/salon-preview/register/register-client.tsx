@@ -9,8 +9,16 @@ import { SalonSidebar } from "../salon-shell";
 export type CatalogRow = { id: string; name: string; unit: string; sku: string; priceCents: number | null };
 export type CustomerRow = { id: string; name: string; whatsapp: string };
 
+/**
+ * "Instant Settlement" used to sit under DuitNow QR here -- worded as if the
+ * system itself verified the payment. It never did: picking any of these
+ * three (every one but Prepaid Pass) just records which method the cashier
+ * says was used, the same trust a handwritten receipt book runs on. Prepaid
+ * Pass really is checked (it debits a real package balance) -- that's the
+ * one method here whose note was already honest.
+ */
 const PAYMENT_METHODS = [
-  { key: "qr", icon: "qr_code_scanner", label: "DuitNow QR", note: "Instant Settlement" },
+  { key: "qr", icon: "qr_code_scanner", label: "DuitNow QR", note: "Scan to pay" },
   { key: "card", icon: "credit_card", label: "Terminal EDC", note: "Visa / Master" },
   { key: "cash", icon: "payments", label: "Cash Drawer", note: "Exact / Change" },
   { key: "pass", icon: "loyalty", label: "Prepaid Pass", note: "Deduct sessions" },
@@ -194,6 +202,11 @@ export function RegisterClient({
   const [splitSecondMethod, setSplitSecondMethod] = useState<MethodKey>("cash");
 
   const [parked, setParked] = useState<ParkedTicket[]>([]);
+  // Replaces the two window.confirm() calls this page used to have (task
+  // 438: "that confirmation is the browser's own -- we need our own
+  // design"). One generic overlay, parameterised per action, instead of
+  // a native dialog that looks nothing like the rest of the page.
+  const [confirmAction, setConfirmAction] = useState<{ title: string; body: string; confirmLabel: string; onConfirm: () => void } | null>(null);
   const [charging, setCharging] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
@@ -384,7 +397,6 @@ export function RegisterClient({
   function resumeTicket(id: string) {
     const found = parked.find((p) => p.id === id);
     if (!found) return;
-    if (cart.length > 0 && !confirm("This clears the current ticket. Continue?")) return;
     setCart(found.lines);
     setPartyId(found.partyId);
     setPartyName(found.partyName);
@@ -392,6 +404,27 @@ export function RegisterClient({
     const next = parked.filter((p) => p.id !== id);
     setParked(next);
     saveParked(next);
+  }
+  // Gating (ask first if there's something to lose) moves up here, out of
+  // resumeTicket/resetTicket themselves -- those two stay plain actions,
+  // and only the click handlers decide whether to ask.
+  function askToResume(id: string) {
+    if (cart.length === 0) { resumeTicket(id); return; }
+    setConfirmAction({
+      title: "Replace the current ticket?",
+      body: "Opening a parked ticket clears what's on this one — it isn't saved anywhere.",
+      confirmLabel: "Open parked ticket",
+      onConfirm: () => { resumeTicket(id); setConfirmAction(null); },
+    });
+  }
+  function askToClear() {
+    if (cart.length === 0) return;
+    setConfirmAction({
+      title: "Clear this ticket?",
+      body: "Everything on it will be removed. This can't be undone.",
+      confirmLabel: "Clear ticket",
+      onConfirm: () => { resetTicket(); setConfirmAction(null); },
+    });
   }
 
   async function charge() {
@@ -729,11 +762,26 @@ export function RegisterClient({
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <button onClick={holdTicket} disabled={cart.length === 0} className="h-7 w-7 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#5e5e67] hover:text-[#1a1c1f] flex items-center justify-center transition-colors disabled:opacity-30" title="Hold Folio">
+                        {/* Icon-only buttons with no visible label were task
+                            438's complaint ("I pressed it and nothing
+                            happened -- what are these for?"): a tooltip
+                            that only shows on hover tells no one anything
+                            on a touchscreen. Both now carry real words. */}
+                        <button
+                          onClick={holdTicket}
+                          disabled={cart.length === 0}
+                          className="h-7 pl-2 pr-2.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#5e5e67] hover:text-[#1a1c1f] flex items-center gap-1 transition-colors disabled:opacity-30"
+                        >
                           <span className="material-symbols-outlined text-[16px]">pause_circle</span>
+                          <span className="text-[11.5px] font-medium">Hold</span>
                         </button>
-                        <button onClick={() => { if (cart.length === 0 || confirm("Clear this ticket?")) resetTicket(); }} className="h-7 w-7 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#5e5e67] hover:text-[#ba1a1a] flex items-center justify-center transition-colors" title="Clear Folio">
+                        <button
+                          onClick={askToClear}
+                          disabled={cart.length === 0}
+                          className="h-7 pl-2 pr-2.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#5e5e67] hover:text-[#ba1a1a] flex items-center gap-1 transition-colors disabled:opacity-30"
+                        >
                           <span className="material-symbols-outlined text-[16px]">delete_sweep</span>
+                          <span className="text-[11.5px] font-medium">Clear</span>
                         </button>
                       </div>
                     </div>
@@ -747,8 +795,9 @@ export function RegisterClient({
                               <span className="text-[13.5px] leading-5 font-normal text-[#1a1c1f] font-semibold truncate">{partyName}</span>
                             </div>
                           </div>
-                          <button onClick={() => { setPartyId(null); setPartyName(""); }} className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-[#e8e8ec] active:scale-[0.97] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors shrink-0" title="Change Client">
+                          <button onClick={() => { setPartyId(null); setPartyName(""); }} className="h-7 pl-2 pr-2.5 rounded-lg flex items-center gap-1 hover:bg-[#e8e8ec] active:scale-[0.97] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors shrink-0">
                             <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
+                            <span className="text-[11.5px] font-medium">Change</span>
                           </button>
                         </div>
                       ) : pickingClient ? (
@@ -774,8 +823,13 @@ export function RegisterClient({
                               <span className="text-[13.5px] leading-5 font-normal text-[#1a1c1f] font-semibold truncate">No client attached yet</span>
                             </div>
                           </div>
-                          <button onClick={() => setPickingClient(true)} className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-[#e8e8ec] active:scale-[0.97] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors shrink-0" title="Attach Client">
-                            <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
+                          {/* task 438: "it's just an icon -- how would I know
+                              that's how I attach someone?" -- swap_horiz also
+                              reads as "change," not "add," for a row that has
+                              no client yet. Real word, and the matching verb. */}
+                          <button onClick={() => setPickingClient(true)} className="h-7 pl-2 pr-2.5 rounded-lg flex items-center gap-1 hover:bg-[#e8e8ec] active:scale-[0.97] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors shrink-0">
+                            <span className="material-symbols-outlined text-[16px]">person_add</span>
+                            <span className="text-[11.5px] font-medium">Attach</span>
                           </button>
                         </div>
                       )}
@@ -810,22 +864,37 @@ export function RegisterClient({
                       )}
 
                       {discountOpen ? (
-                        <div className="flex items-center gap-2 pt-0.5">
-                          <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">add_circle</span>
-                          <span className="text-[11.5px] text-[#5e5e67]">RM</span>
-                          <input
-                            autoFocus
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={discountInput}
-                            onChange={(e) => setDiscountInput(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && applyDiscount()}
-                            className="w-20 h-7 px-2 rounded-md border border-[#c8c5cb]/50 text-[12px] tabular-nums focus:outline-none focus:border-[#000000]"
-                            placeholder="0.00"
-                          />
-                          <button onClick={applyDiscount} className="text-[11.5px] font-medium text-[#1a1c1f] hover:underline">Apply</button>
-                          <button onClick={() => { setDiscountOpen(false); setDiscountInput(""); }} className="text-[11.5px] text-[#5e5e67] hover:underline">Cancel</button>
+                        /* task 438: "that design is ugly" -- this used to be
+                           a bare row of a circle-plus icon, a spinner input
+                           and two underlined text links, nothing like any
+                           other control on the page. It now reuses the same
+                           card + labeled-input + real-button shape the
+                           price-prompt above already uses. */
+                        <div className="p-3 rounded-xl bg-[#f3f3f7] border border-[#c8c5cb]/40 flex flex-col gap-2.5">
+                          <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67]">Discount amount</span>
+                          <div className="flex items-center gap-2">
+                            <div className="relative flex-1 min-w-0">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-[#5e5e67]">RM</span>
+                              <input
+                                autoFocus
+                                aria-label="Discount amount"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={discountInput}
+                                onChange={(e) => setDiscountInput(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && applyDiscount()}
+                                className="h-9 w-full pl-9 pr-2 rounded-lg border border-[#c8c5cb]/60 bg-white text-[13.5px] tabular-nums focus:outline-none focus:border-[#000000]"
+                                placeholder="0.00"
+                              />
+                            </div>
+                            <button type="button" onClick={() => { setDiscountOpen(false); setDiscountInput(""); }} className="h-9 px-3 rounded-lg border border-[#c8c5cb]/60 text-[13px] font-medium hover:bg-[#eeedf1] shrink-0">
+                              Cancel
+                            </button>
+                            <button type="button" onClick={applyDiscount} className="h-9 px-4 rounded-lg bg-[#000000] text-[#ffffff] text-[13px] font-semibold hover:bg-neutral-800 shrink-0">
+                              Apply
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         <div className="flex items-center justify-between pt-0.5">
@@ -837,10 +906,22 @@ export function RegisterClient({
                             onClick={toggleVoucher}
                             disabled={!giftAvailableCents}
                             className="text-[11.5px] text-[#5e5e67] hover:text-[#1a1c1f] active:scale-[0.97] flex items-center gap-1 font-medium transition-colors disabled:opacity-30"
-                            title={giftAvailableCents ? `${partyName} has ${ringgit(giftAvailableCents)} gift credit` : "Attach a client with gift credit first"}
                           >
                             <span className="material-symbols-outlined text-[15px]">redeem</span>
-                            <span>{voucherAppliedCents > 0 ? `Voucher: -${ringgit(voucherAppliedCents)}` : "Voucher"}</span>
+                            {/* task 438: pressing a disabled button and seeing
+                                nothing reads as broken. The label now says
+                                why, instead of hiding the reason in a
+                                hover-only title no one on a touchscreen
+                                would ever see. */}
+                            <span>
+                              {voucherAppliedCents > 0
+                                ? `Voucher: -${ringgit(voucherAppliedCents)}`
+                                : !partyId
+                                  ? "Voucher (needs a client)"
+                                  : !giftAvailableCents
+                                    ? "Voucher (no credit on file)"
+                                    : "Voucher"}
+                            </span>
                           </button>
                         </div>
                       )}
@@ -940,7 +1021,7 @@ export function RegisterClient({
                     ) : (
                       <div className="space-y-2">
                         {parked.map((f) => (
-                          <div key={f.id} onClick={() => resumeTicket(f.id)} className="p-2.5 rounded-xl bg-[#f3f3f7] hover:bg-[#eeedf1] border border-[#c8c5cb]/20 transition-colors flex items-center justify-between cursor-pointer">
+                          <div key={f.id} onClick={() => askToResume(f.id)} className="p-2.5 rounded-xl bg-[#f3f3f7] hover:bg-[#eeedf1] border border-[#c8c5cb]/20 transition-colors flex items-center justify-between cursor-pointer">
                             <div className="flex items-center gap-2.5">
                               <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                               <div>
@@ -960,6 +1041,27 @@ export function RegisterClient({
           </div>
         </main>
       </div>
+      {/* Our own confirm dialog -- replaces the two browser-native confirm()
+          calls this page used to show (task 438). Fixed overlay, so where
+          it sits in the tree doesn't matter; it just needs to be mounted. */}
+      {confirmAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="alertdialog" aria-modal="true" aria-labelledby="register-confirm-title">
+          <div className="w-full max-w-sm rounded-2xl bg-[#ffffff] shadow-xl border border-[#c8c5cb]/30 p-5 flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <h2 id="register-confirm-title" className="text-[15px] font-semibold text-[#1a1c1f]">{confirmAction.title}</h2>
+              <p className="text-[13px] leading-5 text-[#5e5e67]">{confirmAction.body}</p>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <button type="button" onClick={() => setConfirmAction(null)} className="h-9 px-4 rounded-lg border border-[#c8c5cb]/60 text-[13px] font-medium hover:bg-[#f3f3f7]">
+                Cancel
+              </button>
+              <button type="button" onClick={confirmAction.onConfirm} className="h-9 px-4 rounded-lg bg-[#000000] text-[#ffffff] text-[13px] font-semibold hover:bg-neutral-800">
+                {confirmAction.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

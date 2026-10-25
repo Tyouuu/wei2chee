@@ -129,7 +129,7 @@ try {
   else no("购物车没有正确加总数量", body.match(/Keratin Wash[\s\S]{0,20}/)?.[0]);
 
   // ── 2. 真的挂客人 ─────────────────────────────────────────────────────
-  await page.getByTitle("Attach Client").click();
+  await page.getByRole("button", { name: "Attach" }).click();
   await page.locator("select").selectOption({ label: "Cart-Test Guest" });
   body = await page.locator("body").innerText();
   if (/Cart-Test Guest/.test(body)) ok("🔴 真的挂上一个真客人(不是打字乱猜)");
@@ -148,7 +148,7 @@ try {
   else no("折扣之后的总额不对");
 
   // ── 4. 真的代金券(走真的储值卡余额) ──────────────────────────────────
-  await page.getByTitle(/gift credit/).click();
+  await page.getByRole("button", { name: "Voucher" }).click();
   body = await page.locator("body").innerText();
   if (/Voucher: -RM 30/.test(body)) ok("🔴 代金券用的是这位客人真的储值余额(RM 30),不是编的数字");
   else no("代金券没有套用", body.match(/Voucher[\s\S]{0,30}/)?.[0]);
@@ -231,7 +231,7 @@ try {
   const addBtn2 = page.locator('h3:has-text("Cart-Test Keratin Wash")').locator("..").locator("..").getByRole("button").last();
   await addBtn2.click();
   await page.waitForTimeout(200);
-  await page.getByTitle("Hold Folio").click();
+  await page.getByRole("button", { name: "Hold" }).click();
   await page.waitForTimeout(300);
   body = await page.locator("body").innerText();
   // "Parked Tickets" 那个标签有 `uppercase` 的 CSS,innerText 读到的是渲染后的
