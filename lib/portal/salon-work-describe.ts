@@ -1,4 +1,5 @@
-import { describeDay } from "./layout-ops";
+import { describeDay, describeRows } from "./layout-ops";
+import type { TableModel } from "./table-model";
 
 /**
  * 给新版沙龙十四页（`salon-preview/`）用的"把画面上的真记录讲给模型听"，
@@ -73,4 +74,40 @@ export function describeSalonAppointments(
   const body = describeDay({ rows });
   if (!body) return "";
   return `- id=today-appointments type=DaySchedule (Today's Appointments)${body}`;
+}
+
+export type SalonClientForDescribe = {
+  id: string;
+  name: string;
+  phone: string;
+  status: string;
+};
+
+/**
+ * 客户名册，照 `describeRows` 要的 `TableModel` 形状摆好——跟 Schedule 那支
+ * `describeSalonAppointments` 同一个理由（见档头）：这一页没有 Puck 树，
+ * 直接凑一份假的 `{columns, rows}` 喂给已经在教模型读的同一个格式，不重写
+ * 第二份。`href` 只是让 `describeRows` 自己的正则挖出真编号，不是一条真的
+ * 连结。`remember`/`grant_credit`/`use_credit`/`add_treatment_note` 这类
+ * 挂在**客人**身上、不是挂在某一笔预约上的动作，要靠这份清单才指得到人。
+ */
+export function describeSalonClients(clients: SalonClientForDescribe[]): string {
+  const table: TableModel = {
+    columns: [
+      { key: "name", label: "Name", kind: "text" },
+      { key: "phone", label: "Phone", kind: "text" },
+      { key: "status", label: "Tag", kind: "text" },
+    ],
+    rows: clients.map((c) => ({
+      href: `/client/${c.id}`,
+      cells: {
+        name: c.name || "",
+        phone: c.phone || "",
+        status: c.status || "",
+      },
+    })),
+  };
+  const body = describeRows(table);
+  if (!body) return "";
+  return `- id=client-directory type=RecordTable (Client Directory)${body}`;
 }

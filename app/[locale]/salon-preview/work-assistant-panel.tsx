@@ -7,6 +7,8 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { Skip } from "@/lib/portal/skip-codes";
 import { sayWhyNot } from "../portal/[pageKey]/ai-assistant";
 
+const TURNS_STORAGE_KEY = "formae-work-assistant-turns";
+
 /**
  * `work-assistant.tsx` 的轻量版——给新版沙龙十四页（`salon-preview/`）用，
  * 不依赖 Puck。
@@ -49,7 +51,29 @@ export function WorkAssistantPanel({
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<string[] | null>(null);
-  const [turns, setTurns] = useState<{ asked: string; did: string }[]>([]);
+  // 跨页记得住最近讲了什么——每一页都是自己一份新的 React 状态，切一次页
+  // 这个组件就重新挂载一次。存进这个分页的 sessionStorage，换页不丢，
+  // 关掉分页才清掉（跟 assistant_facts 那种"他明讲要记住的规矩"不是同一件
+  // 事：那个是他自己要你记的、跨会话都要在；这个是"我们刚才聊到哪"，
+  // 一次逛这十四页的手感，不需要活过这次逛）。只当方便，读写都包 try/catch，
+  // 读不到就当没聊过，不是错误。
+  const [turns, setTurns] = useState<{ asked: string; did: string }[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = sessionStorage.getItem(TURNS_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as { asked: string; did: string }[]) : [];
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(TURNS_STORAGE_KEY, JSON.stringify(turns));
+    } catch {
+      // 存不进去（无痕视窗、存量满了）就算了——turns 这一轮还在内存里，
+      // 只是换页之后接不上，不是这次对话坏了。
+    }
+  }, [turns]);
   const [shot, setShot] = useState<{ path: string; preview: string } | null>(
     null,
   );

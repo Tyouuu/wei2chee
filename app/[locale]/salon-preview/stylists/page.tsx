@@ -9,6 +9,8 @@ import {
   type BusinessContext,
 } from "@/lib/templates/industry-template";
 import { MaterialSymbolsLink } from "../salon-shell";
+import { WorkAssistantPanel } from "../work-assistant-panel";
+import { describeSalonClients } from "@/lib/portal/salon-work-describe";
 import { StylistClient, type StylistProfile, type CommissionTier } from "./stylist-client";
 
 /**
@@ -83,12 +85,12 @@ export default async function SalonStylistProfilePreview({
 
   const { data: rosterRows } = await supabase
     .from("directory_entries")
-    .select("id, name")
+    .select("id, name, phone, status")
     .eq("project_id", projectId)
     .eq("module_key", "staff")
     .is("archived_at", null)
     .order("name");
-  const roster = (rosterRows ?? []) as { id: string; name: string }[];
+  const roster = (rosterRows ?? []) as { id: string; name: string; phone: string; status: string }[];
 
   const selectedId = roster.find((s) => s.id === staffParam)?.id ?? roster[0]?.id ?? null;
 
@@ -96,6 +98,7 @@ export default async function SalonStylistProfilePreview({
     return (
       <>
         <MaterialSymbolsLink />
+        <WorkAssistantPanel pageKey="staff" pageDescription="" pages={[]} />
         <StylistClient businessName={businessName} roster={[]} selectedId={null} profile={null} canSeeMoney={workspace.isOwner} />
       </>
     );
@@ -227,9 +230,14 @@ export default async function SalonStylistProfilePreview({
       : null,
   };
 
+  const pageDescription = describeSalonClients(
+    roster.map((s) => ({ id: s.id, name: s.name, phone: s.phone, status: s.status })),
+  );
+
   return (
     <>
       <MaterialSymbolsLink />
+      <WorkAssistantPanel pageKey="staff" pageDescription={pageDescription} pages={[]} />
       {/* key={selectedId}: forces a fresh mount when the stylist picker
           navigates to a different ?staff=<id>. Without it, this stays the
           SAME component instance across the navigation (only the route's

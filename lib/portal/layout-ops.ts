@@ -1193,7 +1193,7 @@ const RECORD_ID = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
  *  只有这么多的清单，在模型眼里长得一模一样。 */
 const ROWS_SHOWN = 12;
 
-function describeRows(table: TableModel): string {
+export function describeRows(table: TableModel): string {
   const rows = table.rows ?? [];
   if (!rows.length) return "";
   const shown = rows.slice(0, ROWS_SHOWN).map((r) => {

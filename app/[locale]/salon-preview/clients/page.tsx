@@ -9,6 +9,8 @@ import {
   type BusinessContext,
 } from "@/lib/templates/industry-template";
 import { MaterialSymbolsLink } from "../salon-shell";
+import { WorkAssistantPanel } from "../work-assistant-panel";
+import { describeSalonClients } from "@/lib/portal/salon-work-describe";
 import { ClientsClient, type ClientRow } from "./clients-client";
 
 /**
@@ -318,9 +320,18 @@ export default async function SalonClientsPreview({
     };
   });
 
+  // ── 给助手看的那一份：这一页真的客户，真的编号 ───────────────────────
+  // 跟 Schedule 那次同一条规矩（task 432）：候选清单只服务"动已有一行"的
+  // 那几支（remember / grant_credit / use_credit / add_treatment_note），
+  // "开新的"（add_directory_entry 等）不需要先看到任何东西。
+  const pageDescription = describeSalonClients(
+    clients.map((c) => ({ id: c.id, name: c.name, phone: c.phone, status: c.status })),
+  );
+
   return (
     <>
       <MaterialSymbolsLink />
+      <WorkAssistantPanel pageKey="customers" pageDescription={pageDescription} pages={[]} />
       {/* ?client=<id> is how Reports & Rankings' "View profile" arrow lands on
           one person. An id that isn't in this list falls back to the first
           client, same as no param. */}
