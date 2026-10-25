@@ -15,6 +15,18 @@ type Appointment = Extract<LaneItem, { type: "appointment" }>;
 const hhmm = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 const SCHEDULE = "/en/salon-preview/schedule";
 
+/** The Monday that starts the week containing dateStr (a plain "YYYY-MM-DD",
+ * read as a calendar date, not a timestamp -- no timezone conversion). */
+function mondayOf(dateStr: string): Date {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  const day = d.getUTCDay(); // 0 Sun .. 6 Sat
+  d.setUTCDate(d.getUTCDate() + (day === 0 ? -6 : 1 - day));
+  return d;
+}
+function isoOf(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
 export function ScheduleClient({
   projectId,
   dateStr,
@@ -68,13 +80,11 @@ export function ScheduleClient({
   nextArrivals: { guestName: string; timeLabel: string; service: string; staffName: string | null; initials: string }[];
   quickSlots: Gap[];
 }) {
-  const [viewTab, setViewTab] = useState<"day" | "gap" | "week">("day");
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [activeStylist, setActiveStylist] = useState<string>("all");
   const [stylistMenuOpen, setStylistMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
-  // The Week shows one stylist at a time (that is how the field does it).
-  const [weekStaffId, setWeekStaffId] = useState<string>(weekStaff[0]?.id || "anyone");
   // The two side panels: the booking form (blank, or prefilled from an open
   // slot) and the appointment that was clicked.
   const [booking, setBooking] = useState<{ prefill: BookingPrefill | null } | null>(null);
@@ -125,21 +135,18 @@ export function ScheduleClient({
     { key: "completed", label: `Completed (${totals.completedCount})` },
   ];
 
-  // Every open stretch of the day, for the "Gap & Open Slots" view.
-  const allGaps = lanes
-    .flatMap((lane) =>
-      lane.items
-        .filter((it): it is Gap => it.type === "gap")
-        .map((it) => ({ ...it, laneName: lane.name })),
-    )
-    .sort((a, b) => a.startMinutesOfDay - b.startMinutesOfDay || a.laneName.localeCompare(b.laneName));
-
-  const weekRows = weekLanes[weekStaffId] ?? [];
-  const weekBookings = weekRows.reduce((s, l) => s + l.bookingsCount, 0);
-
-  const tabClass = (on: boolean) =>
-    "px-4 py-1.5 rounded-lg text-[13.5px] leading-5 font-normal leading-tight text-center transition-all active:scale-[0.97] " +
-    (on ? "bg-[#ffffff] text-[#1a1c1f] shadow-sm" : "text-[#5e5e67] hover:text-[#1a1c1f]");
+  // The week strip above the timeline (Task 437): a Monday-Sunday row of
+  // date buttons, computed from dateStr, no new server data needed. This
+  // replaces the separate Day / Week / Gap & Open tabs -- one continuous
+  // page instead of three. Open slots stay visible as dashed-border cells
+  // in the timeline itself and in "Quick Slot Placement" on the right;
+  // there's no separate full-page gap list anymore.
+  const weekStart = mondayOf(dateStr);
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setUTCDate(d.getUTCDate() + i);
+    return d;
+  });
 
   const dayHeader = (
     <div className="px-5 py-3 border-b border-[#c8c5cb]/30 flex flex-wrap items-center justify-between gap-3 bg-[#ffffff]">
@@ -187,32 +194,6 @@ export function ScheduleClient({
     </div>
   );
 
-  const weekHeader = (
-    <div className="px-5 py-3 border-b border-[#c8c5cb]/30 flex flex-wrap items-center justify-between gap-3 bg-[#ffffff]">
-      <div className="flex items-center gap-3">
-        <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#000000]">Week · {weekLabel}</span>
-        <select
-          aria-label="Week stylist"
-          value={weekStaffId}
-          onChange={(e) => setWeekStaffId(e.target.value)}
-          className="h-8 rounded-lg border border-[#c8c5cb]/50 bg-[#ffffff] px-2.5 text-[13px] text-[#1a1c1f] outline-none focus:border-[#000000]"
-        >
-          {weekStaff.map((s) => (
-            <option key={s.id || "anyone"} value={s.id || "anyone"}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="flex items-center gap-4 text-[11.5px] text-[#5e5e67]">
-        <span data-testid="week-count">
-          {weekBookings} {weekBookings === 1 ? "booking" : "bookings"} this week
-        </span>
-        <span>Click a day to open it · click an open stretch to book it</span>
-      </div>
-    </div>
-  );
-
   return (
     <div
       className="bg-[#f9f9fd] text-[#1a1c1f] text-[14.5px] leading-[22px] tracking-[-0.005em] antialiased min-h-screen"
@@ -244,23 +225,6 @@ export function ScheduleClient({
                         : `Full Roster · ${rosterCount} Stylist${rosterCount === 1 ? "" : "s"}`}
                     </span>
                   </div>
-                  <div className="inline-flex items-center p-1 rounded-xl bg-[#f3f3f7] border border-[#c8c5cb]/30 select-none">
-                    <button onClick={() => setViewTab("day")} className={tabClass(viewTab === "day")}>
-                      Day
-                      <br />
-                      <span className="font-medium text-[11px] text-[#5e5e67]">Schedule</span>
-                    </button>
-                    <button onClick={() => setViewTab("gap")} className={tabClass(viewTab === "gap")}>
-                      Gap &amp; Open
-                      <br />
-                      <span className="text-[11px]">Slots</span>
-                    </button>
-                    <button onClick={() => setViewTab("week")} className={tabClass(viewTab === "week")}>
-                      Week
-                      <br />
-                      <span className="text-[11px]">View</span>
-                    </button>
-                  </div>
                   <button
                     onClick={() => setBooking({ prefill: null })}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#000000] text-[#ffffff] hover:bg-neutral-800 transition-colors text-[13.5px] leading-5 font-normal shadow-sm cursor-pointer shrink-0 active:scale-[0.99]"
@@ -278,22 +242,63 @@ export function ScheduleClient({
               {/* Filters, Date Controls & Status Summary */}
               <div className="flex items-center justify-between pt-1 gap-4 flex-wrap">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex items-center rounded-lg bg-[#ffffff] border border-[#c8c5cb]/50 shadow-2xs overflow-hidden">
+                  {/* overflow-hidden used to sit here to clip the three children to
+                      the group's rounded corners -- it also silently clipped the
+                      week-strip popover, which opens below this row and extends
+                      past its bottom edge. Rounded corners moved onto the first/
+                      last child directly so the popover can escape. */}
+                  <div className="flex items-center rounded-lg bg-[#ffffff] border border-[#c8c5cb]/50 shadow-2xs">
                     <Link
                       href={`${SCHEDULE}?date=${prevDate}`}
-                      className="px-2.5 py-1.5 hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors active:scale-[0.97]"
+                      className="px-2.5 py-1.5 rounded-l-lg hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors active:scale-[0.97]"
                       title="Previous Day"
                       aria-label="Previous day"
                     >
                       <span className="material-symbols-outlined text-[16px]">chevron_left</span>
                     </Link>
-                    <div className="px-3 py-1.5 text-[13.5px] leading-5 font-normal text-[#1a1c1f] border-x border-[#c8c5cb]/30 flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">calendar_today</span>
-                      <span data-testid="day-label">{dayLabel}</span>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setDatePickerOpen((v) => !v)}
+                        className="px-3 py-1.5 text-[13.5px] leading-5 font-normal text-[#1a1c1f] border-x border-[#c8c5cb]/30 flex items-center gap-2 hover:bg-[#eeedf1] transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">calendar_today</span>
+                        <span data-testid="day-label">{dayLabel}</span>
+                        <span className="material-symbols-outlined text-[16px] text-[#5e5e67]">
+                          {datePickerOpen ? "arrow_drop_up" : "arrow_drop_down"}
+                        </span>
+                      </button>
+                      {datePickerOpen && (
+                        <div
+                          data-testid="week-strip"
+                          className="absolute left-0 top-full mt-1 rounded-lg border border-[#c8c5cb]/50 bg-[#ffffff] shadow-md z-30 p-2 flex items-center gap-1"
+                        >
+                          {weekDays.map((d) => {
+                            const iso = isoOf(d);
+                            const active = iso === dateStr;
+                            return (
+                              <Link
+                                key={iso}
+                                href={`${SCHEDULE}?date=${iso}`}
+                                onClick={() => setDatePickerOpen(false)}
+                                className={
+                                  "flex flex-col items-center gap-0.5 w-11 py-2 rounded-lg transition-colors " +
+                                  (active ? "bg-[#000000] text-[#ffffff]" : "text-[#1a1c1f] hover:bg-[#f3f3f7]")
+                                }
+                              >
+                                <span className={"text-[10px] font-mono uppercase " + (active ? "text-[#ffffff]/80" : "text-[#5e5e67]")}>
+                                  {new Intl.DateTimeFormat("en-MY", { timeZone: "UTC", weekday: "short" }).format(d)}
+                                </span>
+                                <span className="text-[14px] font-semibold">{d.getUTCDate()}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                     <Link
                       href={`${SCHEDULE}?date=${nextDate}`}
-                      className="px-2.5 py-1.5 hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors active:scale-[0.97]"
+                      className="px-2.5 py-1.5 rounded-r-lg hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors active:scale-[0.97]"
                       title="Next Day"
                       aria-label="Next day"
                     >
@@ -395,80 +400,22 @@ export function ScheduleClient({
 
             {/* Main Canvas */}
             <div className="p-8 flex gap-6 items-start">
-              {viewTab === "day" && (
-                <Timeline
-                  header={dayHeader}
-                  lanes={visibleLanes}
-                  hourLabels={hourLabels}
-                  totalWidth={totalWidth}
-                  nowLeft={nowLeft}
-                  nowLabel={nowLabel}
-                  laneHeader="Stylist / Chair"
-                  empty={
-                    lanes.length === 0
-                      ? "No staff members are set up yet."
-                      : `No stylist matches ${search ? `"${search}"` : "this filter"}${activeStylist !== "all" ? ` for ${activeStylist}` : ""}${statusFilter !== "all" ? ` in ${STATUS_PILLS.find((p) => p.key === statusFilter)?.label}` : ""}.`
-                  }
-                  onBookGap={bookSlot}
-                  onOpenAppt={openAppointment}
-                />
-              )}
-
-              {viewTab === "week" && (
-                <Timeline
-                  header={weekHeader}
-                  lanes={weekRows}
-                  hourLabels={weekHourLabels}
-                  totalWidth={weekTotalWidth}
-                  nowLeft={null}
-                  nowLabel={nowLabel}
-                  laneHeader="Day"
-                  empty="No staff members are set up yet."
-                  onBookGap={bookSlot}
-                  onOpenAppt={openAppointment}
-                />
-              )}
-
-              {/* Gap & Open Slots: every open stretch of the day, biggest picture of where a walk-in fits */}
-              {viewTab === "gap" && (
-                <div className="flex-1 min-w-0 bg-[#ffffff] border border-[#c8c5cb]/40 rounded-xl shadow-sm flex flex-col overflow-hidden">
-                  <div className="px-5 py-3 border-b border-[#c8c5cb]/30 flex items-center justify-between">
-                    <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#000000]">
-                      Open Slots · {dayLabel}
-                    </span>
-                    <span className="text-[11.5px] font-mono px-2 py-0.5 rounded bg-[#eeedf1] text-[#5e5e67] border border-[#c8c5cb]/30">
-                      {allGaps.length} open
-                    </span>
-                  </div>
-                  {allGaps.length === 0 ? (
-                    <p data-testid="gap-empty" className="p-10 text-center text-[13.5px] text-[#5e5e67]">
-                      Nothing open on this day — every stylist is booked through the shown hours.
-                    </p>
-                  ) : (
-                    <div className="divide-y divide-[#c8c5cb]/20">
-                      {allGaps.map((g, i) => (
-                        <div key={i} data-testid="gap-row" className="px-5 py-3 flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <span className="w-2.5 h-2.5 rounded-full bg-[#000000] shrink-0" />
-                            <div className="min-w-0">
-                              <div className="text-[13.5px] font-semibold text-[#1a1c1f] truncate">{g.laneName}</div>
-                              <div className="text-[11.5px] font-mono text-[#5e5e67]">
-                                {g.timeLabel} · {g.minutes} min open
-                              </div>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => bookSlot(g)}
-                            className="px-3 py-1.5 rounded-lg border border-[#c8c5cb]/60 hover:border-[#000000] hover:bg-[#eeedf1] text-[12.5px] font-medium text-[#1a1c1f] transition-colors"
-                          >
-                            Book this slot
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+              <Timeline
+                header={dayHeader}
+                lanes={visibleLanes}
+                hourLabels={hourLabels}
+                totalWidth={totalWidth}
+                nowLeft={nowLeft}
+                nowLabel={nowLabel}
+                laneHeader="Stylist / Chair"
+                empty={
+                  lanes.length === 0
+                    ? "No staff members are set up yet."
+                    : `No stylist matches ${search ? `"${search}"` : "this filter"}${activeStylist !== "all" ? ` for ${activeStylist}` : ""}${statusFilter !== "all" ? ` in ${STATUS_PILLS.find((p) => p.key === statusFilter)?.label}` : ""}.`
+                }
+                onBookGap={bookSlot}
+                onOpenAppt={openAppointment}
+              />
 
               {/* Right Side: Daily Capacity & Booking Triage */}
               <div className="w-[310px] shrink-0 flex flex-col gap-4">

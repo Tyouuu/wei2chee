@@ -70,6 +70,25 @@ async function until(fn, ms = 20000) {
   return false;
 }
 
+// Our own time picker (time-field.tsx) replaced the native <input type="time">
+// (Task 437) -- it's a button that opens a list of quarter-hour slots, not an
+// <input> with .fill()/.inputValue(). Click it open, click the matching slot.
+function timeLabel(hhmm) {
+  const [h, m] = hhmm.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${period}`;
+}
+async function setTime(scope, label, hhmm) {
+  await scope.getByLabel(label).click();
+  await scope.getByRole("button", { name: timeLabel(hhmm), exact: true }).click();
+}
+async function timeValue(scope, label) {
+  // The button's own innerText also carries the clock icon's ligature text
+  // ("schedule") as a sibling span -- read just the label span, not the icon.
+  return (await scope.getByLabel(label).locator("span").first().innerText()).trim();
+}
+
 // 今天，马来西亚时间，固定几个钟点方便断言（不是「现在」，是种资料用的锚点）。
 const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date());
 const at = (h, m = 0) => new Date(`${todayStr}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00+08:00`).toISOString();
@@ -281,66 +300,57 @@ try {
   await page.goto(`${BASE}/en/salon-preview/schedule?date=${otherDay}`, { waitUntil: "networkidle", timeout: 180000 });
   check("🔴 直接打开同一周的另一天，看得到那天的预约", /Other-Day Guest/.test(await page.locator("body").innerText()));
 
-  // ── ② 周视图：一位师傅、七天、每天一行（跟日视图同一条时间轴）─────────────
-  console.log("\n② 周视图（一次一位师傅）");
-  const otherIdx = (new Date(`${otherDay}T00:00:00Z`).getUTCDay() + 6) % 7; // 另一天是这一周的第几行（周一 = 0）
+  // ── ② 周条：点日期标题，一排七天，点其中一天真的跳过去（取代原来的 Week 分页）──
+  console.log("\n② 周条选日期（task437：合并成一页，不再分 Day/Week/Gap&Open 三个分页）");
   await page.goto(`${BASE}/en/salon-preview/schedule`, { waitUntil: "networkidle", timeout: 180000 });
-  await page.getByRole("button", { name: /^Week/ }).click();
-  check("🔴 周视图七行，一天一行", (await page.getByTestId("lane-label").count()) === 7, String(await page.getByTestId("lane-label").count()));
-  check("🔴 一次只看一位：默认第一位（Amy），下拉里有两位师傅", (await page.getByLabel("Week stylist").inputValue()) === amy.data.id && (await page.getByLabel("Week stylist").locator("option").count()) === 2);
-  check("🔴 Amy 这一周 4 笔（今天 3 笔含要取消那笔 + 另一天 1 笔）", /4 bookings this week/.test(await page.getByTestId("week-count").innerText()), await page.getByTestId("week-count").innerText());
-  check("🔴 今天那一行标着 Today", (await page.getByTestId("lane-label").filter({ hasText: "Today" }).count()) === 1);
-  check("Amy 这一周的预约卡都画在行里（4 张）", (await page.getByTestId("appt-card").count()) === 4, String(await page.getByTestId("appt-card").count()));
-  await page.getByLabel("Week stylist").selectOption(jasmine.data.id);
-  check("🔴 换成 Jasmine：这一周 2 笔，而且换了一批卡", /2 bookings this week/.test(await page.getByTestId("week-count").innerText()) && (await page.getByTestId("appt-card").count()) === 2, `${await page.getByTestId("week-count").innerText()} / ${await page.getByTestId("appt-card").count()}`);
-  check("没有假的写死师傅名", !/Chloe Tan|Amy Chen|Kelvin Ng/.test(await page.locator("body").innerText()));
-  await page.getByLabel("Week stylist").selectOption(amy.data.id);
-  await page.screenshot({ path: `${OUT}/3-week.png`, fullPage: true });
-  // 点周视图里「另一天」那一行的空档 → 订位面板带着那一天，订下去就订在那一天
-  const otherRow = page.getByTestId("lane-label").nth(otherIdx);
-  const otherRowTop = await otherRow.boundingBox();
-  check("另一天那一行找得到", !!otherRowTop);
-  const rowGaps = page.locator("button", { hasText: "min Open" });
-  // 每一行的空档按钮按 y 位置归到行；取另一天那一行里第一段（09:00 起）
-  const gapButtons = await rowGaps.all();
-  let picked = null;
-  for (const g of gapButtons) {
-    const box = await g.boundingBox();
-    if (box && otherRowTop && box.y >= otherRowTop.y - 2 && box.y < otherRowTop.y + otherRowTop.height && /09:00/.test(await g.innerText())) { picked = g; break; }
-  }
-  check("🔴 另一天那一行有 09:00 起的空档", !!picked);
-  await picked.click();
-  let wdlg = page.getByRole("dialog", { name: "New appointment" });
-  check("🔴 点周视图的空档：订位面板写着那一天（不是今天）", (await wdlg.innerText()).includes(dayLabelOf(otherDay).split(",")[0]) && !(await wdlg.innerText()).includes(dayLabelOf(todayStr)), (await wdlg.innerText()).slice(0, 120));
-  await wdlg.getByLabel("Client").fill("Week-Booked Guest");
-  await wdlg.getByRole("button", { name: "Book Appointment" }).click();
-  await wdlg.waitFor({ state: "detached", timeout: 30000 });
-  const weekBooked = await must("week booked", Promise.resolve(admin.from("appointments").select("starts_at, staff_id").eq("project_id", pid).eq("party", "Week-Booked Guest")));
-  check("🔴 订在那一天的 09:00，不是今天", weekBooked.length === 1 && new Date(weekBooked[0].starts_at).getTime() === new Date(atOn(otherDay, 9, 0)).getTime() && weekBooked[0].staff_id === amy.data.id, JSON.stringify(weekBooked));
-  await page.getByTestId("lane-label").nth(otherIdx).getByRole("link").click();
+  check("🔴 不再有 Week / Gap & Open 分页按钮了（合并成一页）", (await page.getByRole("button", { name: /^Week/ }).count()) === 0 && (await page.getByRole("button", { name: /Gap & Open/ }).count()) === 0);
+  await page.getByTestId("day-label").click();
+  const weekStrip = page.getByTestId("week-strip");
+  const weekStripLinks = weekStrip.locator("a");
+  check("🔴 点日期标题：弹出七天的周条", (await weekStripLinks.count()) === 7, String(await weekStripLinks.count()));
+  await page.screenshot({ path: `${OUT}/3-week-strip.png`, fullPage: true });
+  // Scoped to the popover -- otherDay is often the same date as the >
+  // chevron's href (both "tomorrow"), so an unscoped href match would be
+  // ambiguous about which element it clicked.
+  await weekStrip.locator(`a[href$="date=${otherDay}"]`).click();
   await showing(otherDay);
   await until(async () => /Other-Day Guest/.test(await page.locator("body").innerText()));
-  check("🔴 点周视图里一天的名字，真的打开那一天", /Other-Day Guest/.test(await page.locator("body").innerText()) && /Week-Booked Guest/.test(await page.locator("body").innerText()));
+  check("🔴 点周条里的某一天，真的跳到那一天", /Other-Day Guest/.test(await page.locator("body").innerText()));
 
-  // ── ③ 空档列表 + 订一个空档 ──────────────────────────────────────────────
-  console.log("\n③ 空档");
+  // ── ③ 空档——还在日视图的时间轴上（不是另一个分页），直接点那一格订 ────────
+  console.log("\n③ 空档（就在日视图里）");
   await page.goto(`${BASE}/en/salon-preview/schedule`, { waitUntil: "networkidle", timeout: 180000 });
-  await page.getByRole("button", { name: /Gap & Open/ }).click();
-  check("🔴 空档列表：今天 Amy 4 段 + Jasmine 3 段 = 7 段（含 17:30–18:00 那 30 分钟）", (await page.getByTestId("gap-row").count()) === 7, String(await page.getByTestId("gap-row").count()));
+  const amyRow = page.getByTestId("lane-label").filter({ hasText: "Schedule-Test Amy" });
+  const amyRowTop = await amyRow.boundingBox();
+  check("Amy 那一行找得到", !!amyRowTop);
+  const dayGapButtons = await page.locator("button", { hasText: "min Open" }).all();
+  let picked = null;
+  for (const g of dayGapButtons) {
+    const box = await g.boundingBox();
+    if (box && amyRowTop && box.y >= amyRowTop.y - 2 && box.y < amyRowTop.y + amyRowTop.height && /09:00/.test(await g.innerText())) { picked = g; break; }
+  }
+  check("🔴 Amy 那一行有 09:00 起的空档", !!picked);
   await page.screenshot({ path: `${OUT}/4-gaps.png`, fullPage: true });
-  const amyGap = page.getByTestId("gap-row").filter({ hasText: "Schedule-Test Amy" }).filter({ hasText: "09:00 - 10:00" });
-  await amyGap.getByRole("button", { name: "Book this slot" }).click();
+  await picked.click();
   let dlg = page.getByRole("dialog", { name: "New appointment" });
-  check("🔴 点空档：订位弹窗自己带好师傅 Amy、09:00、10:00", (await dlg.getByLabel("Stylist").inputValue()) === amy.data.id && (await dlg.getByLabel("Start time").inputValue()) === "09:00" && (await dlg.getByLabel("End time").inputValue()) === "10:00");
+  check("🔴 点空档：订位弹窗自己带好师傅 Amy、09:00、10:00", (await dlg.getByLabel("Stylist").inputValue()) === amy.data.id && (await timeValue(dlg, "Start time")) === timeLabel("09:00") && (await timeValue(dlg, "End time")) === timeLabel("10:00"));
   await dlg.getByLabel("Client").fill("Gap-Booked Guest");
   await dlg.getByLabel("Service").fill("Gloss");
   await dlg.getByRole("button", { name: "Book Appointment" }).click();
   await dlg.waitFor({ state: "detached", timeout: 30000 });
   const gapRow = await must("gap booked", Promise.resolve(admin.from("appointments").select("starts_at, ends_at, staff_id, party, service, source").eq("project_id", pid).eq("party", "Gap-Booked Guest")));
   check("🔴 真的订进资料库：Amy · 09:00–10:00 · Gloss · 柜台订的", gapRow.length === 1 && gapRow[0].staff_id === amy.data.id && new Date(gapRow[0].starts_at).getTime() === new Date(at(9, 0)).getTime() && new Date(gapRow[0].ends_at).getTime() === new Date(at(10, 0)).getTime() && gapRow[0].service === "Gloss" && gapRow[0].source === "staff", JSON.stringify(gapRow));
-  await until(async () => (await page.getByTestId("gap-row").count()) === 6);
-  check("🔴 订完那一段空档不见了（7 → 6）", (await page.getByTestId("gap-row").count()) === 6, String(await page.getByTestId("gap-row").count()));
-  await page.getByRole("button", { name: /^Day/ }).click();
+  const amyStillHas0900 = async () => {
+    const row = await amyRow.boundingBox();
+    if (!row) return false;
+    for (const g of await page.locator("button", { hasText: "min Open" }).all()) {
+      const box = await g.boundingBox();
+      if (box && box.y >= row.y - 2 && box.y < row.y + row.height && /09:00/.test(await g.innerText())) return true;
+    }
+    return false;
+  };
+  await until(async () => !(await amyStillHas0900()));
+  check("🔴 订完那一段空档不见了（Amy 那一行的 09:00 按钮本身消失）", !(await amyStillHas0900()));
 
   // ── ④ 新增预约（顶上那颗按钮） ────────────────────────────────────────────
   console.log("\n④ 新增预约");
@@ -354,13 +364,13 @@ try {
   check("选了之后写明已连到她的客人档案", /Linked to her saved client folio/.test(await dlg.innerText()));
   await dlg.getByRole("button", { name: "Book Appointment" }).click();
   check("没填时间：讲要选起止时间", /start and an end time/.test(await dlg.getByTestId("booking-error").innerText()));
-  await dlg.getByLabel("Start time").fill("13:00");
-  await dlg.getByLabel("End time").fill("12:00");
+  await setTime(dlg, "Start time", "13:00");
+  await setTime(dlg, "End time", "12:00");
   await dlg.getByRole("button", { name: "Book Appointment" }).click();
   check("🔴 结束早于开始：讲「结束要晚于开始」", /end after it starts/.test(await dlg.getByTestId("booking-error").innerText()));
   await dlg.getByLabel("Stylist").selectOption(amy.data.id);
-  await dlg.getByLabel("Start time").fill("10:30");
-  await dlg.getByLabel("End time").fill("11:00");
+  await setTime(dlg, "Start time", "10:30");
+  await setTime(dlg, "End time", "11:00");
   await dlg.getByRole("button", { name: "Book Appointment" }).click();
   await page.waitForFunction(() => /already taken/i.test(document.body.innerText), null, { timeout: 30000 }).catch(() => {});
   check("🔴 订到 Amy 已经有人的时段：资料库自己的那句「That time is already taken」出现在弹窗里", /already taken/i.test(await dlg.innerText()), await dlg.innerText());
@@ -368,8 +378,8 @@ try {
   check("🔴 撞了的那笔没有被存进去", clashRows.length === 0);
   await page.screenshot({ path: `${OUT}/5-dialog-clash.png` });
   await dlg.getByLabel("Stylist").selectOption(jasmine.data.id);
-  await dlg.getByLabel("Start time").fill("12:30");
-  await dlg.getByLabel("End time").fill("13:30");
+  await setTime(dlg, "Start time", "12:30");
+  await setTime(dlg, "End time", "13:30");
   await dlg.getByLabel("Service").fill("Cut");
   check("🔴 起止时间填好，面板自己算出时长「1 h」", (await dlg.getByTestId("booking-length").innerText()) === "1 h", await dlg.getByTestId("booking-length").innerText());
   await dlg.getByRole("button", { name: "Book Appointment" }).click();
@@ -388,8 +398,8 @@ try {
   await dlg.getByLabel(/Save her as a new client/).check();
   await dlg.getByLabel("Phone or WhatsApp").fill("012-345 6789");
   await dlg.getByLabel("Stylist").selectOption(jasmine.data.id);
-  await dlg.getByLabel("Start time").fill("16:00");
-  await dlg.getByLabel("End time").fill("16:30");
+  await setTime(dlg, "Start time", "16:00");
+  await setTime(dlg, "End time", "16:30");
   await dlg.getByRole("button", { name: "Book Appointment" }).click();
   await dlg.waitFor({ state: "detached", timeout: 30000 });
   const saved = await must("saved client", Promise.resolve(admin.from("directory_entries").select("id, name, phone, whatsapp").eq("project_id", pid).eq("module_key", "customers").eq("name", "Newly-Saved Guest")));
@@ -401,8 +411,8 @@ try {
   await page.getByRole("button", { name: /New\s*Appointment/ }).first().click();
   dlg = page.getByRole("dialog", { name: "New appointment" });
   await dlg.getByLabel("Client").fill("Anyone-Booked Guest");
-  await dlg.getByLabel("Start time").fill("13:45");
-  await dlg.getByLabel("End time").fill("14:15");
+  await setTime(dlg, "Start time", "13:45");
+  await setTime(dlg, "End time", "14:15");
   await dlg.getByRole("button", { name: "Book Appointment" }).click();
   await dlg.waitFor({ state: "detached", timeout: 30000 });
   await until(async () => (await page.getByTestId("lane-label").filter({ hasText: "Anyone" }).count()) === 1);
@@ -486,8 +496,8 @@ try {
   const sdlg = sp.getByRole("dialog", { name: "New appointment" });
   await sdlg.getByLabel("Client").fill("Counter-Booked Guest");
   await sdlg.getByLabel("Stylist").selectOption(jasmine.data.id);
-  await sdlg.getByLabel("Start time").fill("14:00");
-  await sdlg.getByLabel("End time").fill("14:30");
+  await setTime(sdlg, "Start time", "14:00");
+  await setTime(sdlg, "End time", "14:30");
   await sdlg.getByRole("button", { name: "Book Appointment" }).click();
   await sdlg.waitFor({ state: "detached", timeout: 30000 }).catch(() => {});
   const counter = await must("counter", Promise.resolve(admin.from("appointments").select("id").eq("project_id", pid).eq("party", "Counter-Booked Guest")));

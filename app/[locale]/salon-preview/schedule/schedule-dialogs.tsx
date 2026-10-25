@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { FIELD, LABEL, Sheet, sentence } from "../side-panel";
+import { TimeField } from "./time-field";
 
 /**
  * The two side panels behind the schedule page (Task 415 / 416).
@@ -275,25 +276,23 @@ export function BookingSheet({
           <div className="flex flex-col gap-1.5">
             <span className={LABEL}>Time</span>
             <div className="grid grid-cols-2 gap-3">
-              <input
-                type="time"
-                aria-label="Start time"
+              <TimeField
+                label="Start time"
                 value={start}
-                onChange={(e) => {
-                  setStart(e.target.value);
+                onChange={(v) => {
+                  setStart(v);
                   setError(null);
                 }}
-                className={FIELD}
+                fieldClassName={FIELD}
               />
-              <input
-                type="time"
-                aria-label="End time"
+              <TimeField
+                label="End time"
                 value={end}
-                onChange={(e) => {
-                  setEnd(e.target.value);
+                onChange={(v) => {
+                  setEnd(v);
                   setError(null);
                 }}
-                className={FIELD}
+                fieldClassName={FIELD}
               />
             </div>
             {length && (
