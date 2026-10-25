@@ -137,7 +137,7 @@ export function StylistClient({
     >
       <SalonSidebar active="stylists-and-staff" businessName={businessName} subtitle="Operations" />
       <div className="pl-64 min-h-screen bg-[#f9f9fd]">
-        <main className="w-full pt-0 bg-[#f9f9fd] p-5">
+        <main className="w-full pt-0 bg-[#f9f9fd] px-8 pb-5">
           <div className="flex flex-col w-full">
             {/* Breadcrumb & Roster Picker */}
             <div className="flex flex-col md:flex-row md:items-center justify-between pb-3 gap-2">

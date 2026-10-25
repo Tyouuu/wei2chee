@@ -83,7 +83,7 @@ export function ReportsClient({ canSeeMoney, data }: { canSeeMoney: boolean; dat
     >
       <SalonSidebar active="reports-and-rankings" businessName={data.businessName} subtitle="Operations" />
       <div className="pl-64 min-h-screen bg-[#f9f9fd]">
-        <main data-print-sheet className="w-full px-7 py-7 bg-[#f9f9fd]">
+        <main data-print-sheet className="w-full px-8 py-7 bg-[#f9f9fd]">
           <div className="flex flex-col w-full">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-5 mb-5 border-b border-[#c8c5cb]/30">

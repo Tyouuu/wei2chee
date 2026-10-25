@@ -144,7 +144,7 @@ export function PackagesClient({
     >
       <SalonSidebar active="packages-and-prepaid" businessName={businessName} subtitle="Operations" />
       <div className="pl-64 min-h-screen bg-[#f9f9fd]">
-        <main className="w-full px-7 py-7 bg-[#f9f9fd]">
+        <main className="w-full px-8 py-7 bg-[#f9f9fd]">
           <div className="flex flex-col w-full">
             <PrepaidTabs active="packages" />
             <div className="flex flex-col md:flex-row md:items-center justify-between pb-5 gap-3">

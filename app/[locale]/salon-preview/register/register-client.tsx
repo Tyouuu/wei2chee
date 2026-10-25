@@ -480,6 +480,16 @@ export function RegisterClient({
         <main className="w-full pt-0 bg-[#f9f9fd] min-h-screen">
           <div className="flex flex-col w-full">
             <div className="p-8 w-full max-w-[1720px] mx-auto space-y-6">
+              {/* Page identity -- this was the one page in the set with no h1 at all
+                  (task 434's consistency pass caught it, cross-checked by two tools).
+                  Kept to a single compact line since Register is the densest page in
+                  the set and every extra row of height here is real screen space a
+                  cashier loses on every checkout. */}
+              <div className="flex items-center gap-2 text-[11.5px] leading-4 tracking-[0.04em] font-medium tracking-wider uppercase text-[#5e5e67]">
+                <span>Operations</span>
+                <span className="text-[#c8c5cb]">/</span>
+                <h1 className="text-[#1a1c1f] font-semibold normal-case text-[13.5px] tracking-normal">Register &amp; Checkout</h1>
+              </div>
               {/* Top Utility Bar */}
               <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-[#c8c5cb]/20">
                 <div className="flex items-center gap-3">

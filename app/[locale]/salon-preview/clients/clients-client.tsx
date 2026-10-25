@@ -188,7 +188,7 @@ export function ClientsClient({
       <div className="pl-64 min-h-screen bg-[#f9f9fd]">
         <main className="w-full min-h-screen bg-[#f9f9fd]">
           <div className="flex flex-col w-full">
-            <div className="p-5 flex flex-col gap-5 max-w-[1720px] mx-auto w-full">
+            <div className="px-8 py-5 flex flex-col gap-5 max-w-[1720px] mx-auto w-full">
               {/* Header */}
               <div className="flex flex-col gap-2.5 pb-3 border-b border-[#eeedf1]">
                 <div className="flex items-center gap-2 text-[11.5px] font-mono text-[#77767b] tracking-wider uppercase">
