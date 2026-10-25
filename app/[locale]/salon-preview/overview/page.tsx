@@ -267,11 +267,11 @@ export default async function SalonOverviewPreview({
                 <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/* Metric 1: Today's Guest Flow */}
                   <div className="p-5 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between h-36">
-                    <div className="flex items-center justify-between text-[#5e5e67]">
+                    <div className="flex items-start justify-between gap-2 text-[#5e5e67]">
                       <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase">
                         Today&apos;s Flow (今日客流)
                       </span>
-                      <span className="material-symbols-outlined text-[18px]">group</span>
+                      <span className="material-symbols-outlined text-[18px] shrink-0">group</span>
                     </div>
                     <div>
                       <div className="text-[30px] leading-9 tracking-[-0.025em] font-semibold text-[#000000] tabular-nums">
@@ -285,11 +285,11 @@ export default async function SalonOverviewPreview({
 
                   {/* Metric 2: Stylist Workload */}
                   <div className="p-5 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between h-36">
-                    <div className="flex items-center justify-between text-[#5e5e67]">
+                    <div className="flex items-start justify-between gap-2 text-[#5e5e67]">
                       <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase">
                         Stylist Workload (技师负荷)
                       </span>
-                      <span className="material-symbols-outlined text-[18px]">badge</span>
+                      <span className="material-symbols-outlined text-[18px] shrink-0">badge</span>
                     </div>
                     <div>
                       <div className="flex items-baseline justify-between">
@@ -311,11 +311,11 @@ export default async function SalonOverviewPreview({
 
                   {/* Metric 3: Today's Takings */}
                   <div className="p-5 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between h-36">
-                    <div className="flex items-center justify-between text-[#5e5e67]">
+                    <div className="flex items-start justify-between gap-2 text-[#5e5e67]">
                       <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase">
                         Today&apos;s Takings (实收开单)
                       </span>
-                      <span className="material-symbols-outlined text-[18px]">payments</span>
+                      <span className="material-symbols-outlined text-[18px] shrink-0">payments</span>
                     </div>
                     <div>
                       <div className="text-[30px] leading-9 tracking-[-0.025em] font-semibold text-[#000000] tabular-nums">
@@ -329,10 +329,10 @@ export default async function SalonOverviewPreview({
 
                   {/* Metric 4: Dispensary Low Stock */}
                   <div className="p-5 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between h-36">
-                    <div className="flex items-center justify-between text-[#5e5e67]">
-                      <div className="flex items-center gap-1.5">
+                    <div className="flex items-start justify-between gap-2 text-[#5e5e67]">
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <span
-                          className={`w-2 h-2 rounded-full ${lowStock.length ? "bg-[#ba1a1a]" : "bg-[#c8c5cb]"}`}
+                          className={`w-2 h-2 rounded-full shrink-0 ${lowStock.length ? "bg-[#ba1a1a]" : "bg-[#c8c5cb]"}`}
                         />
                         <span
                           className={`text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase ${
@@ -343,7 +343,7 @@ export default async function SalonOverviewPreview({
                         </span>
                       </div>
                       <span
-                        className={`material-symbols-outlined text-[18px] ${
+                        className={`material-symbols-outlined text-[18px] shrink-0 ${
                           lowStock.length ? "text-[#ba1a1a]" : "text-[#5e5e67]"
                         }`}
                       >
@@ -352,7 +352,7 @@ export default async function SalonOverviewPreview({
                     </div>
                     {lowStock.length ? (
                       <div className="flex items-end justify-between">
-                        <div className="pr-2 truncate">
+                        <div className="pr-2 truncate" title={lowStock[0].name}>
                           <div className="text-[14.5px] leading-[22px] tracking-[-0.005em] font-medium text-[#000000] font-semibold truncate">
                             {lowStock[0].name}
                           </div>
@@ -379,18 +379,18 @@ export default async function SalonOverviewPreview({
                   <div className="lg:col-span-8 space-y-6">
                     {/* Stylist Roster & Day Target Breakdown */}
                     <div className="p-6 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm space-y-5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-between flex-wrap gap-x-3 gap-y-2">
+                        <div className="flex items-center gap-3 flex-wrap gap-y-1.5">
                           <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67]">
                             Daily Stylist Run Sheet (今日工位与业绩分配)
                           </span>
-                          <span className="px-2 py-0.5 rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium bg-[#e8e8ec] text-[#000000] font-medium">
+                          <span className="px-2 py-0.5 rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium bg-[#e8e8ec] text-[#000000] font-medium shrink-0">
                             {staff.length} Active Staff
                           </span>
                         </div>
                         <Link
                           href="/en/salon-preview/stylists"
-                          className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] hover:text-[#000000] active:scale-[0.97] transition-all uppercase tracking-wider font-semibold flex items-center gap-1"
+                          className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] hover:text-[#000000] active:scale-[0.97] transition-all uppercase tracking-wider font-semibold flex items-center gap-1 shrink-0"
                         >
                           View Full Roster <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                         </Link>
@@ -446,49 +446,52 @@ export default async function SalonOverviewPreview({
                       </div>
 
                       {upcoming.length ? (
-                        <div className="overflow-x-auto">
-                          <div className="min-w-[600px] divide-y divide-[#eeedf1]">
-                            {upcoming.slice(0, 6).map((a) => (
-                              <div key={a.id} className="py-3.5 flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-4">
-                                  <span className="text-[13.5px] leading-[18px] tracking-[0.01em] font-medium font-semibold text-[#000000] w-20 shrink-0">
-                                    {new Intl.DateTimeFormat("en-MY", {
-                                      timeZone: "Asia/Kuala_Lumpur",
-                                      hour: "numeric",
-                                      minute: "2-digit",
-                                    }).format(new Date(a.starts_at))}
-                                  </span>
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-[14.5px] leading-[22px] tracking-[-0.005em] font-medium font-semibold text-[#000000]">
-                                        {a.party || "Walk-in guest"}
-                                      </span>
-                                    </div>
-                                    <div className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] mt-0.5">
-                                      {a.service || "Service not noted"}
-                                      {staffNameOf(a.staff_id) ? ` · Stylist ${staffNameOf(a.staff_id)}` : ""}
-                                    </div>
+                        // No forced min-width + horizontal scroll here on purpose: at
+                        // 900-1280px that combination hid the "Open" link off-screen
+                        // with no visible scrollbar to say so. Each row now wraps and
+                        // truncates on its own instead of needing the whole table to
+                        // be wider than its column.
+                        <div className="divide-y divide-[#eeedf1]">
+                          {upcoming.slice(0, 6).map((a) => (
+                            <div key={a.id} className="py-3.5 flex items-center justify-between gap-3 flex-wrap">
+                              <div className="flex items-center gap-4 min-w-0">
+                                <span className="text-[13.5px] leading-[18px] tracking-[0.01em] font-medium font-semibold text-[#000000] w-16 shrink-0">
+                                  {new Intl.DateTimeFormat("en-MY", {
+                                    timeZone: "Asia/Kuala_Lumpur",
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                  }).format(new Date(a.starts_at))}
+                                </span>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[14.5px] leading-[22px] tracking-[-0.005em] font-medium font-semibold text-[#000000] truncate">
+                                      {a.party || "Walk-in guest"}
+                                    </span>
+                                  </div>
+                                  <div className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] mt-0.5 truncate">
+                                    {a.service || "Service not noted"}
+                                    {staffNameOf(a.staff_id) ? ` · Stylist ${staffNameOf(a.staff_id)}` : ""}
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  <span
-                                    className={
-                                      "px-2 py-0.5 rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium " +
-                                      (a.arrived_at ? "bg-[#e8e8ec] text-[#000000]" : "bg-[#e8e8ec] text-[#5e5e67]")
-                                    }
-                                  >
-                                    {a.arrived_at ? "Arrived" : "Booked"}
-                                  </span>
-                                  <Link
-                                    href={`/${locale}/portal/${a.module_key}/${a.id}`}
-                                    className="px-3 py-1 bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] text-[#000000] rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium transition-colors"
-                                  >
-                                    Open
-                                  </Link>
-                                </div>
                               </div>
-                            ))}
-                          </div>
+                              <div className="flex items-center gap-3 shrink-0">
+                                <span
+                                  className={
+                                    "px-2 py-0.5 rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium " +
+                                    (a.arrived_at ? "bg-[#e8e8ec] text-[#000000]" : "bg-[#e8e8ec] text-[#5e5e67]")
+                                  }
+                                >
+                                  {a.arrived_at ? "Arrived" : "Booked"}
+                                </span>
+                                <Link
+                                  href={`/${locale}/portal/${a.module_key}/${a.id}`}
+                                  className="px-3 py-1 bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] text-[#000000] rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium transition-colors"
+                                >
+                                  Open
+                                </Link>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <p className="text-[13.5px] text-[#5e5e67]">Nothing else booked for today.</p>
@@ -591,10 +594,10 @@ export default async function SalonOverviewPreview({
 
                     {/* Practical Inventory Reorder Action Alert */}
                     <div className="p-6 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm space-y-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-x-3 gap-y-1.5">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`w-2 h-2 rounded-full ${lowStock.length ? "bg-[#ba1a1a] animate-pulse" : "bg-[#c8c5cb]"}`}
+                            className={`w-2 h-2 rounded-full shrink-0 ${lowStock.length ? "bg-[#ba1a1a] animate-pulse" : "bg-[#c8c5cb]"}`}
                           />
                           <h3 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#000000]">
                             Dispensary &amp; Stock Alert
@@ -602,7 +605,7 @@ export default async function SalonOverviewPreview({
                         </div>
                         <Link
                           href="/en/salon-preview/stock"
-                          className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] hover:text-[#000000] active:scale-[0.97] uppercase tracking-wider font-semibold transition-all"
+                          className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] hover:text-[#000000] active:scale-[0.97] uppercase tracking-wider font-semibold transition-all shrink-0"
                         >
                           Manage Stock
                         </Link>
@@ -619,8 +622,8 @@ export default async function SalonOverviewPreview({
                                 key={item.item_id}
                                 className="p-3.5 rounded bg-[#f3f3f7] flex items-center justify-between gap-3"
                               >
-                                <div>
-                                  <div className="text-[14.5px] leading-[22px] tracking-[-0.005em] font-medium font-semibold text-[#000000]">
+                                <div className="min-w-0" title={item.name}>
+                                  <div className="text-[14.5px] leading-[22px] tracking-[-0.005em] font-medium font-semibold text-[#000000] truncate">
                                     {item.name}
                                   </div>
                                   <div className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] mt-0.5">
