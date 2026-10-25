@@ -5860,7 +5860,7 @@ check-in · 收银结帐 · 套票核销 · 新客订位 · 收工点钞，量�
 - [ ] 预约页"Daily Booking Triage"面板跟上面的筛选栏数字重复（全部9/进行中2/
       待处理5/已完成2 讲了两次）——风险小，排在后面一起处理
 
-### 437. 🔴 预约页四件事——他亲自截图标出来的，只记不动手（2026-10-25）
+### 437. ✅ 预约页四件事——他亲自截图标出来的，全部做完了（2026-10-25，demo 2026-10-26 他说 OK，已推上线 `9daf62a`）
 > `你先记下来 有很多东西 首先就是这个appointment页面 还有自己打字 应该是像
 >  stylist一样可以选的 然后就是上面sunday那边 不可以选日期 还有就是我要你们
 >  是根据我们的system的UI自己去设计选日期的组件 你懂吗 时间的组件也是
@@ -5869,21 +5869,29 @@ check-in · 收银结帐 · 套票核销 · 新客订位 · 收工点钞，量�
 
 他自己截了五张图点出来的，照他原话顺序：
 
-- [ ] **"New Appointment"面板里的 CLIENT 栏是自由打字**——要改成跟 STYLIST 栏
-      一样的真选单（点开直接挑一个已有的客人，不是打字盼着自动完成接得住）
-- [ ] **顶上"Sunday, 25 Oct 2026"那一行点不动**——只能靠 ‹ › 箭头跟"Today"按钮翻，
-      标题本身不是一个可以直接选日期的入口
-- [ ] 🔴 **日期/时间选择器用的是浏览器/系统原生控件，要照 Formae 自己的视觉
-      语言重新设计一套**——截图里那个时间选择器（蓝底数字滚轮，41/42/43…
-      分钟配 AM/PM）一看就是 Windows 原生的样子，跟整个系统的设计完全不是
-      一套。他原话：`不要用windows系统自带的 根本就不好看`
-- [ ] **Day / Week / Gap & Open 三个分开的切换视图，要想办法合成一页**——
-      他原话：`又day 又week 又gap open的 你看看如何结合在一页里面`，要先想一个
-      方案，不是直接动手拼
+- [x] ✅ **"New Appointment"面板里的 CLIENT 栏改成真选单**——跟 STYLIST 栏
+      同一个形状：点开/聚焦直接列出客人（最多 8 个），不用先打字；查询
+      框一清空也照样列出完整名单，不是等打字触发
+- [x] ✅ **顶上日期标题现在点得动**——点"Sunday, 25 Oct 2026"弹出一排
+      七天的周条（`data-testid="week-strip"`），点哪天就跳哪天，不再只能
+      靠 ‹ › 箭头一天一天翻
+- [x] ✅ 🔴 **自己设计了一套时间选择器，不再用 Windows 原生控件**——新组件
+      `app/[locale]/salon-preview/schedule/time-field.tsx`，15 分钟一格、
+      七点到九点，样式跟系统其余部分一致。路上抓到一个真的 Chromium 渲染
+      bug（下拉列表被 Sheet 的 `overflow-y-auto` 裁切）：用
+      `position: fixed`（开弹窗时量 `getBoundingClientRect()`）取代
+      `absolute`，弹窗才完整显示，不再被弹窗自己的滚动容器切掉
+- [x] ✅ **Day / Week / Gap & Open 合成一页了**——拿掉三个切换按钮；日视图是
+      主体；点日期标题弹出周条当周视图用；空档继续直接长在时间轴上
+      （虚线框），不用再切页看空档列表
 
-⚠️ **他明讲"你先记下来"——这一条只登记，没有查代码也没有动手。** 下一步要做
-的是先去看别人（Fresha/Mangomint/Booksy 等既有参考，[重点7d]）怎么设计日期/
-时间选择器跟三视图合并的，再出方案，不要自己先画。
+🔴 **路上顺手抓到并修掉的真 bug，跟上面四件一起验证过**：日期导航那一排
+`overflow-hidden` 会连带裁掉下方弹出的周条——改成把圆角直接放在首尾两个
+按钮上，不靠父层裁切（跟 TimeField 那个 bug 是同一类：圆角 + overflow-hidden
+组合会被 Chromium 裁错）。
+
+✅ **验证**：`scripts/shoot-schedule-real.mjs` 58/58 真登入断言全过，tsc 干净，
+真登入截图逐项用眼睛看过。
 
 ### 438. ✅ 收银台一堆问题，而其中一句话问到了最要紧的那件事（2026-10-25）
 > `记下来也是`——他截了八张图，照原话逐条列：
@@ -5976,15 +5984,29 @@ QR 真的扫了没有，是收银员自己眼睛看着发生、自己按按钮�
 
 - [x] ✅ **Register 页（任务438）demo link 他看过、说 OK，已经推上线**
       （`50a69d5`，2026-10-25 晚）
-- [ ] 🔴 **[重点40] 全局落地：把侧边滑出面板换成居中弹窗**——第一步扫一遍
-      十四页，列出哪些页在用 `side-panel.tsx`（已知 Schedule 的
-      New Appointment、Clients 的 New Client/Edit Profile/Book Next/
-      Redeem Session，[任务404]/[任务415] 共用的那一份壳），逐个核对
-      还有没有别的页也在用同一份或别的滑出面板。改壳本身一份，
-      所有消费端一起生效，不要各自重写
-- [ ] 🔴 **系统 UI 全局扫一遍"按了没事发生"的按钮**——十四页逐页列清单，
-      再逐个判断是拿掉还是接上，不只是 Register 跟 Schedule
-- [ ] 🔴 **Schedule 页（任务437）处理完先出 html demo link**——四件 UI 问题
-      ＋ 居中弹窗 ＋ 按钮清理，这页先做完先出 demo；其余十二页的
-      居中弹窗/按钮清理跟进，视情况分批出 demo，不要憋到十四页一起发
+- [x] ✅ **[重点40] 居中弹窗落地到共用壳**：`side-panel.tsx`（`Sheet` 组件）
+      桌面（md+）改成居中弹窗，移动端原样不动（他自己在设计手机版）。
+      这一份壳是 Schedule（New Appointment）· Clients（New Client Folio /
+      Edit Profile / Book Next / Redeem Session）· Lookbook 共用的，
+      改一处全部生效，没有各自重写
+- [x] ✅ **Clients 页按钮清理**（任务439 配图逐条）：筛选条 `overflow-x-auto`
+      → `flex-wrap`（不再挤出滚动条）；"+ New Client Folio" 拿掉重复的 +；
+      四颗操作按钮收成两个文字（Book Next / Charge in Register）+ 两个
+      图标按钮（WhatsApp / Edit Profile，带 `aria-label`）；A-Z 跳转字母
+      点击区域放大到 `h-6 min-w-6`
+- [x] ✅ **Schedule 页四件 + 居中弹窗 + 按钮清理，demo 他看过说 OK，已推上线**
+      （任务437，`9daf62a`，2026-10-26）
+- [x] ✅ **Clients 密度两轮调整 + 真的头像裁切 bug 修好**（任务439 他两次反馈
+      "太拥挤了"）：第一轮内距/间距加大；第二轮更大一次（不再给第三次机会）；
+      路上发现头像被切成半圆是真 bug（overflow-hidden + rounded-full 子元素
+      被 Chromium 裁错），改成圆角直接放在需要裁切的元素本身。demo 他看过
+      说 OK，已推上线（`9daf62a`）
+- [x] ✅ **Overview 页响应式修好**：900-1280px 之间"今天的预约"那块的
+      "Open"按钮会被挤出屏幕外、且没有滚动条提示——拿掉强制 `min-w-[600px]`
+      + `overflow-x-auto`，改成每行自己换行/省略。四格 KPI 卡标题跟图标
+      碰撞也顺手修了。demo 他看过说 OK，已推上线（`9daf62a`）
+- [ ] 🔴 **其余十一页还没扫**（Stock / Stylists / Memberships / Packages /
+      Reports / Invoices / EOD Cash / Lookbook / Audit Log / Settings /
+      Overview 以外的那些）——还要逐页核对有没有别的侧边滑出面板、有没有
+      "按了没事发生"的按钮。视情况分批出 demo，不要憋到十一页一起发
       （太大一批他看不完，[重点22] 清单最多五项同一条精神）
