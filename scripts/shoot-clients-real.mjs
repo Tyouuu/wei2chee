@@ -476,8 +476,11 @@ try {
   if (/Clients-Test Nora/.test(staffBody) && !/Lifetime Spend/.test(staffBody))
     ok("🔴 员工身分看得到客人,但看不到「Lifetime Spend」这个金额格子(sees_money)");
   else no("员工身分的金钱隔离不对", staffBody.match(/Lifetime Spend[\s\S]{0,40}/)?.[0]);
+  // Edit Profile is icon-only now (just an aria-label, no visible text), so
+  // innerText won't see it -- check it by its accessible name instead.
+  const editProfileVisible = await staffPage.getByRole("button", { name: "Edit Profile" }).isVisible().catch(() => false);
   check("🔴 员工身分看不到「Recent Payments」（那是她的钱），但订位 · 改资料的按钮都在",
-    !/Recent Payments/.test(staffBody) && /Book Next/.test(staffBody) && /Edit Profile/.test(staffBody));
+    !/Recent Payments/.test(staffBody) && /Book Next/.test(staffBody) && editProfileVisible);
   await staffPage.screenshot({ path: `${OUT}/3-staff-view.png`, fullPage: true });
   admin.auth.admin.deleteUser(staffUser.user.id).catch(() => {});
 

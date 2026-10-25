@@ -219,7 +219,7 @@ export function ClientsClient({
                       className="h-9 px-3.5 rounded-lg bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] active:scale-[0.97] text-[13.5px] leading-5 font-medium transition-colors flex items-center gap-1.5 shadow-sm"
                     >
                       <span className="material-symbols-outlined text-[16px]">add</span>
-                      <span>+ New Client Folio</span>
+                      <span>New Client Folio</span>
                     </button>
                   </div>
                 </div>
@@ -244,7 +244,11 @@ export function ClientsClient({
                       />
                     </div>
 
-                    <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 text-[11.5px] font-mono">
+                    {/* Wraps instead of scrolling: at the common laptop widths
+                        (1024-1300px) this list of 5 pills doesn't fit on one
+                        line, and a hidden horizontal scrollbar reads as
+                        broken, not as "more to see". */}
+                    <div className="flex items-center gap-1.5 flex-wrap py-0.5 text-[11.5px] font-mono">
                       {segments.map((s) => (
                         <button
                           key={s.key}
@@ -282,9 +286,13 @@ export function ClientsClient({
                     </div>
 
                     {letters.length > 1 && (
-                      <div className="flex items-center justify-between text-[10.5px] font-mono font-medium text-[#77767b] pt-1 border-t border-[#eeedf1] select-none flex-wrap gap-y-1">
+                      <div className="flex items-center flex-wrap gap-0.5 text-[11px] font-mono font-medium text-[#77767b] pt-1.5 border-t border-[#eeedf1] select-none">
                         {letters.map((l) => (
-                          <button key={l} onClick={() => jumpTo(l)} className="px-1 rounded hover:text-[#000000] hover:bg-[#f3f3f7] cursor-pointer">
+                          <button
+                            key={l}
+                            onClick={() => jumpTo(l)}
+                            className="h-6 min-w-6 px-1 rounded hover:text-[#000000] hover:bg-[#f3f3f7] cursor-pointer"
+                          >
                             {l}
                           </button>
                         ))}
@@ -464,18 +472,12 @@ export function ClientsClient({
                               )}
                             </div>
                           </div>
+                          {/* Book Next / Charge in Register are what she does most days,
+                              so they stay labeled. WhatsApp and Edit Profile are
+                              occasional, so they're icon-only here -- same action,
+                              less visual weight, and the row doesn't wrap at
+                              in-between widths anymore. */}
                           <div className="flex items-center gap-2 flex-wrap">
-                            {selected.whatsapp ? (
-                              <a
-                                href={`https://wa.me/${selected.whatsapp.replace(/\D/g, "")}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="h-8 px-3 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#1a1c1f] text-[13px] font-medium transition-colors flex items-center gap-1.5 shadow-sm border border-[#eeedf1]"
-                              >
-                                <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">chat</span>
-                                <span>WhatsApp</span>
-                              </a>
-                            ) : null}
                             <button
                               onClick={() => setPanel("book")}
                               className="h-8 px-3 rounded-lg bg-[#000000] hover:bg-[#1b1b1e] active:scale-[0.97] text-[#ffffff] text-[13px] font-medium transition-colors flex items-center gap-1.5 shadow-sm"
@@ -490,12 +492,25 @@ export function ClientsClient({
                               <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">point_of_sale</span>
                               <span>Charge in Register</span>
                             </Link>
+                            {selected.whatsapp ? (
+                              <a
+                                href={`https://wa.me/${selected.whatsapp.replace(/\D/g, "")}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                aria-label="WhatsApp"
+                                title="WhatsApp"
+                                className="h-8 w-8 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#1a1c1f] transition-colors flex items-center justify-center shadow-sm border border-[#eeedf1]"
+                              >
+                                <span className="material-symbols-outlined text-[16px] text-[#5e5e67]">chat</span>
+                              </a>
+                            ) : null}
                             <button
                               onClick={() => setPanel("edit")}
-                              className="h-8 px-3 rounded-lg bg-[#ffffff] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] text-[13px] font-medium transition-colors flex items-center gap-1.5 shadow-sm border border-[#eeedf1]"
+                              aria-label="Edit Profile"
+                              title="Edit Profile"
+                              className="h-8 w-8 rounded-lg bg-[#ffffff] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] transition-colors flex items-center justify-center shadow-sm border border-[#eeedf1]"
                             >
-                              <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">edit</span>
-                              <span>Edit Profile</span>
+                              <span className="material-symbols-outlined text-[16px] text-[#5e5e67]">edit</span>
                             </button>
                           </div>
                         </div>
